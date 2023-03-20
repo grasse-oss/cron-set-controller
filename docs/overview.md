@@ -1,12 +1,12 @@
 # API Overview
 ## Architecture
-![cron-set-controller-architecture.png](..%2F..%2F..%2F..%2FDownloads%2Fcron-set-controller-architecture.png)
+![cron-set-controller-architecture.png](pictures%2Farchitecture.png)
 
 The Cron Set Operator extends Kubernetes with Custom Resources, which basically define cronjob spec.
 The controller creates Kubernetes [cronjobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) into all nodes. If new node is launched, the controller will reconcile that creates new cronjob into the node.
 
 ## Resource model
-![cron-set-controller-resource-model.png](..%2F..%2F..%2F..%2FDownloads%2Fcron-set-controller-resource-model.png)
+![cron-set-controller-resource-model.png](pictures%2Fresource-model.png)
 ### CronSet
 A CronSet declares what CronJob to launch. The controller create cronjob into all nodes.
 
