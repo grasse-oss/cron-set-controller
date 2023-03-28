@@ -10,3 +10,7 @@ It aims to support the following features:
 ### prerequisites
 
 - kubernetes: v1.21 or later
+
+## Architecture
+
+See [Architecture in overview.md](/docs/overview.md#Architecture)
