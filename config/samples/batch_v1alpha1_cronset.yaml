@@ -1,0 +1,12 @@
+apiVersion: batch.grasse.io/v1alpha1
+kind: CronSet
+metadata:
+  labels:
+    app.kubernetes.io/name: cronset
+    app.kubernetes.io/instance: cronset-sample
+    app.kubernetes.io/part-of: cron-set-controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: cron-set-controller
+  name: cronset-sample
+spec:
+  # TODO(user): Add fields here

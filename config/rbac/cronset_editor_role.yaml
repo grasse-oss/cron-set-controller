@@ -1,0 +1,31 @@
+# permissions for end users to edit cronsets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: cronset-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: cron-set-controller
+    app.kubernetes.io/part-of: cron-set-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: cronset-editor-role
+rules:
+- apiGroups:
+  - batch.grasse.io
+  resources:
+  - cronsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.grasse.io
+  resources:
+  - cronsets/status
+  verbs:
+  - get
