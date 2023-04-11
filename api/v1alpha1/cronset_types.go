@@ -17,19 +17,30 @@ limitations under the License.
 package v1alpha1
 
 import (
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type CronJobTemplateSpec struct {
+	// Standard object's metadata of the jobs created from this template.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// Specification of the desired behavior of the job.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+	// +optional
+	Spec batchv1.CronJobSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
 // CronSetSpec defines the desired state of CronSet
 type CronSetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Selector *metav1.LabelSelector `json:"selector" protobuf:"bytes,1,opt,name=selector"`
 
-	// Foo is an example field of CronSet. Edit cronset_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	CronJobTemplate CronJobTemplateSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=cronJobTemplate"`
 }
 
 // CronSetStatus defines the observed state of CronSet
