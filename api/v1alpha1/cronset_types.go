@@ -45,11 +45,11 @@ type CronSetSpec struct {
 
 // CronSetStatus defines the observed state of CronSet
 type CronSetStatus struct {
-	CurrentNumberScheduled int32
+	CurrentNumberScheduled int32 `json:"currentNumberScheduled" protobuf:"varint,1,opt,name=currentNumberScheduled"`
 
-	NumberMisscheduled int32
+	NumberMisscheduled int32 `json:"numberMisscheduled" protobuf:"varint,2,opt,name=numberMisscheduled"`
 
-	DesiredNumberScheduled int32
+	DesiredNumberScheduled int32 `json:"desiredNumberScheduled" protobuf:"varint,3,opt,name=desiredNumberScheduled"`
 }
 
 //+kubebuilder:object:root=true
