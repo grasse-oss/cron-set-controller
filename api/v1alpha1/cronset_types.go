@@ -45,8 +45,11 @@ type CronSetSpec struct {
 
 // CronSetStatus defines the observed state of CronSet
 type CronSetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	CurrentNumberScheduled int32
+
+	NumberMisscheduled int32
+
+	DesiredNumberScheduled int32
 }
 
 //+kubebuilder:object:root=true
