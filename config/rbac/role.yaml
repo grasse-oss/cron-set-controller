@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - batch.grasse.io
+  resources:
+  - cronsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.grasse.io
+  resources:
+  - cronsets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - batch.grasse.io
+  resources:
+  - cronsets/status
+  verbs:
+  - get
+  - patch
+  - update
