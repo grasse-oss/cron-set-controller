@@ -17,11 +17,16 @@ limitations under the License.
 package controllers
 
 import (
-	"path/filepath"
-	"testing"
-
+	"context"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
+	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"testing"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -40,6 +45,8 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+var ctx context.Context
+var cancel context.CancelFunc
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -48,7 +55,11 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	Expect(os.Setenv("KUBEBUILDER_ASSETS", "../testbin/k8s/1.26.1-linux-amd64")).To(Succeed())
+
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -71,10 +82,78 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&CronSetReconciler{
+		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+	}()
 })
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = Describe("CronSet controller", func() {
+
+	// Define utility constants for object names and testing timeouts/durations and intervals.
+	const (
+		CronSetName      = "test-cronset"
+		CronSetNamespace = "default"
+	)
+
+	Context("When ...", func() {
+		It("Should ...", func() {
+			By("By creating a new CronSet")
+			ctx := context.Background()
+			cronJob := &batchv1alpha1.CronSet{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "batch.grasse.io/v1alpha1",
+					Kind:       "CronSet",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      CronSetName,
+					Namespace: CronSetNamespace,
+				},
+				Spec: batchv1alpha1.CronSetSpec{
+					Selector: &metav1.LabelSelector{},
+					CronJobTemplate: batchv1alpha1.CronJobTemplateSpec{
+						Spec: batchv1.CronJobSpec{
+							Schedule: "1 * * * *",
+							JobTemplate: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									// For simplicity, we only fill out the required fields.
+									Template: v1.PodTemplateSpec{
+										Spec: v1.PodSpec{
+											// For simplicity, we only fill out the required fields.
+											Containers: []v1.Container{
+												{
+													Name:  "test-container",
+													Image: "test-image",
+												},
+											},
+											RestartPolicy: v1.RestartPolicyOnFailure,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, cronJob)).Should(Succeed())
+		})
+	})
 })

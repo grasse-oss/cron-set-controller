@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-
+	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,9 +47,25 @@ type CronSetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+
+	log.Info("Reconcile")
 
 	// TODO(user): your logic here
+	obj := &batchv1alpha1.CronSet{}
+	err := r.Get(ctx, req.NamespacedName, obj)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// for testing
+	log.Info(obj.GetObjectKind().GroupVersionKind().Group)
+	log.Info(obj.GetObjectKind().GroupVersionKind().Version)
+	log.Info(obj.GetObjectKind().GroupVersionKind().Kind)
+
+	fmt.Println(obj.GetObjectKind().GroupVersionKind().Group)
+	fmt.Println(obj.GetObjectKind().GroupVersionKind().Version)
+	fmt.Println(obj.GetObjectKind().GroupVersionKind().Kind)
 
 	return ctrl.Result{}, nil
 }
