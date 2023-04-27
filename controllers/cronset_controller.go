@@ -20,10 +20,15 @@ import (
 	"context"
 	"fmt"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 )
@@ -51,6 +56,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 
 	log.Info("Reconcile")
+	fmt.Println("Reconcile -> {}", req)
 
 	// TODO(user): your logic here
 	obj := &batchv1alpha1.CronSet{}
@@ -59,7 +65,6 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	// for testing
 	log.Info(obj.GetObjectKind().GroupVersionKind().Group)
 	log.Info(obj.GetObjectKind().GroupVersionKind().Version)
 	log.Info(obj.GetObjectKind().GroupVersionKind().Kind)
@@ -73,8 +78,34 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&batchv1alpha1.CronSet{}).
 		Owns(&batchv1.CronJob{}).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	if err := ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.Node{}).
+		Watches(&source.Kind{Type: &corev1.Node{}},
+			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+				var cronSetObjs batchv1alpha1.CronSetList
+				_ = mgr.GetClient().List(context.TODO(), &cronSetObjs)
+
+				var requests []reconcile.Request
+				for _, obj := range cronSetObjs.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      obj.Name,
+							Namespace: obj.Namespace,
+						},
+					})
+				}
+
+				return requests
+			})).Complete(r); err != nil {
+		return err
+	}
+
+	return nil
 }
