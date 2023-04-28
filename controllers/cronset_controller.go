@@ -19,13 +19,12 @@ package controllers
 import (
 	"context"
 	"fmt"
+	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 )
 
 // CronSetReconciler reconciles a CronSet object
@@ -37,6 +36,7 @@ type CronSetReconciler struct {
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/finalizers,verbs=update
+//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
