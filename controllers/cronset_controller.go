@@ -19,17 +19,18 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // CronSetReconciler reconciles a CronSet object
 type CronSetReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -48,9 +49,7 @@ type CronSetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	log.Info("Reconcile")
+	r.Log.Info("Reconcile")
 
 	// TODO(user): your logic here
 	obj := &batchv1alpha1.CronSet{}
@@ -60,9 +59,9 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// for testing
-	log.Info(obj.GetObjectKind().GroupVersionKind().Group)
-	log.Info(obj.GetObjectKind().GroupVersionKind().Version)
-	log.Info(obj.GetObjectKind().GroupVersionKind().Kind)
+	r.Log.Info(obj.GetObjectKind().GroupVersionKind().Group)
+	r.Log.Info(obj.GetObjectKind().GroupVersionKind().Version)
+	r.Log.Info(obj.GetObjectKind().GroupVersionKind().Kind)
 
 	fmt.Println(obj.GetObjectKind().GroupVersionKind().Group)
 	fmt.Println(obj.GetObjectKind().GroupVersionKind().Version)
