@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
+	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,12 +38,14 @@ import (
 // CronSetReconciler reconciles a CronSet object
 type CronSetReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/finalizers,verbs=update
+//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -53,10 +57,8 @@ type CronSetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	log.Info("Reconcile")
-	fmt.Println("Reconcile -> {}", req)
+	r.Log.Info("Reconcile")
+  fmt.Println("Reconcile -> {}", req)
 
 	// TODO(user): your logic here
 	obj := &batchv1alpha1.CronSet{}
@@ -65,9 +67,10 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	log.Info(obj.GetObjectKind().GroupVersionKind().Group)
-	log.Info(obj.GetObjectKind().GroupVersionKind().Version)
-	log.Info(obj.GetObjectKind().GroupVersionKind().Kind)
+	// for testing
+	r.Log.Info(obj.GetObjectKind().GroupVersionKind().Group)
+	r.Log.Info(obj.GetObjectKind().GroupVersionKind().Version)
+	r.Log.Info(obj.GetObjectKind().GroupVersionKind().Kind)
 
 	fmt.Println(obj.GetObjectKind().GroupVersionKind().Group)
 	fmt.Println(obj.GetObjectKind().GroupVersionKind().Version)
