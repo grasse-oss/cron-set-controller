@@ -46,7 +46,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - node
+  - nodes
   verbs:
   - get
   - list
