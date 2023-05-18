@@ -23,16 +23,14 @@ import (
 	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 )
 
 // CronSetReconciler reconciles a CronSet object
@@ -46,6 +44,7 @@ type CronSetReconciler struct {
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/finalizers,verbs=update
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -58,12 +57,14 @@ type CronSetReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info("Reconcile")
-  fmt.Println("Reconcile -> {}", req)
+	fmt.Println("Reconcile -> {}", req)
 
 	// TODO(user): your logic here
 	obj := &batchv1alpha1.CronSet{}
-	err := r.Get(ctx, req.NamespacedName, obj)
-	if err != nil {
+	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, err
 	}
 
