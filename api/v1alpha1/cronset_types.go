@@ -38,9 +38,9 @@ type CronJobTemplateSpec struct {
 
 // CronSetSpec defines the desired state of CronSet
 type CronSetSpec struct {
-	Selector *metav1.LabelSelector `json:"selector" protobuf:"bytes,1,opt,name=selector"`
+	Selector *metav1.LabelSelector `json:"selector,omitempty" protobuf:"bytes,1,opt,name=selector"`
 
-	CronJobTemplate CronJobTemplateSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=cronJobTemplate"`
+	CronJobTemplate CronJobTemplateSpec `json:"template,omitempty" protobuf:"bytes,2,opt,name=template"`
 }
 
 // CronSetStatus defines the observed state of CronSet
