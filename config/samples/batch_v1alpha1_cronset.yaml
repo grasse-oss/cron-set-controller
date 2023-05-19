@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: cron-set-controller
   name: cronset-sample
 spec:
-  template:
+  cronJobTemplate:
     spec:
       schedule: "*/1 * * * *"
       jobTemplate:
