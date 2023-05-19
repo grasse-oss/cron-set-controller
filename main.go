@@ -19,8 +19,6 @@ package main
 import (
 	"flag"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -92,7 +90,7 @@ func main() {
 
 	if err = (&controllers.CronSetReconciler{
 		Client: mgr.GetClient(),
-		Log:    log.Log.WithName("controllers").WithName("CronSet"),
+		Log:    ctrl.Log.WithName("controllers").WithName("CronSet"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CronSet")
