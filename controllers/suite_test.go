@@ -83,6 +83,7 @@ var _ = BeforeSuite(func() {
 
 	err = (&CronSetReconciler{
 		Client: k8sManager.GetClient(),
+		Log:    k8sManager.GetLogger(),
 		Scheme: k8sManager.GetScheme(),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
