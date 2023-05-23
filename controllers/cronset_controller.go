@@ -71,7 +71,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		nodeSelector = obj.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
 	}
 	nodes := &corev1.NodeList{}
-	if err := r.Client.List(ctx, nodes, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
+	if err := r.List(ctx, nodes, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	}
 	nodeMap := make(map[string]bool)
