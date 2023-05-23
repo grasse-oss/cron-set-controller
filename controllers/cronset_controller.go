@@ -18,19 +18,25 @@ package controllers
 
 import (
 	"context"
+	"strings"
+
 	"github.com/go-logr/logr"
 	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+const OwnerLabel = "grasse.io/owner"
 
 // CronSetReconciler reconciles a CronSet object
 type CronSetReconciler struct {
@@ -57,9 +63,8 @@ type CronSetReconciler struct {
 func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info("Reconcile:", req.String())
 
-	// TODO(user): your logic here
-	obj := &batchv1alpha1.CronSet{}
-	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
+	cronSet := &batchv1alpha1.CronSet{}
+	if err := r.Get(ctx, req.NamespacedName, cronSet); err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
@@ -67,16 +72,25 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	var nodeSelector map[string]string
-	if obj.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector != nil {
-		nodeSelector = obj.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
+	if cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector != nil {
+		nodeSelector = cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
 	}
-	nodes := &corev1.NodeList{}
-	if err := r.List(ctx, nodes, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
+
+	nodeList := &corev1.NodeList{}
+	nodeMap := make(map[string]bool)
+	if err := r.List(ctx, nodeList, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	}
-	nodeMap := make(map[string]bool)
-	for _, item := range nodes.Items {
-		nodeMap[item.Name] = true
+	for _, node := range nodeList.Items {
+		if err := r.applyCronJob(ctx, cronSet, node.Name); err != nil {
+			return ctrl.Result{RequeueAfter: 5}, nil
+		}
+		nodeMap[node.Name] = true
+	}
+
+	err := r.cleanUpCronJob(ctx, cronSet.Name, nodeMap)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -114,4 +128,62 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return nil
+}
+
+func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1alpha1.CronSet, nodeName string) error {
+	cronJobName := generateCronJobName(cronSet.Name, nodeName)
+	cronJobKey := metav1.ObjectMeta{
+		Name:      cronJobName,
+		Namespace: cronSet.Namespace,
+	}
+	cronJob := &batchv1.CronJob{
+		ObjectMeta: cronJobKey,
+	}
+
+	_, err := ctrl.CreateOrUpdate(ctx, r.Client, cronJob, func() error {
+		updateCronJobSpec(cronJob, cronSet, nodeName)
+		return controllerutil.SetControllerReference(cronSet, cronJob, r.Scheme)
+	})
+	if err != nil && errors.IsInvalid(err) {
+		_ = r.Delete(ctx, &batchv1.CronJob{ObjectMeta: cronJobKey}, client.PropagationPolicy("Background"))
+		return err
+	}
+
+	return nil
+}
+
+func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName string, nodeMap map[string]bool) error {
+	cronJobList := &batchv1.CronJobList{}
+	cronSetSelector := map[string]string{OwnerLabel: cronSetName}
+	if err := r.List(ctx, cronJobList, client.MatchingLabels(cronSetSelector)); err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	for _, cronJob := range cronJobList.Items {
+		if _, exist := nodeMap[cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName]; !exist {
+			if err := r.Delete(ctx, &cronJob, &client.DeleteOptions{}); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func generateCronJobName(cronSetName string, nodeName string) string {
+	return strings.Join([]string{cronSetName, nodeName, "cronjob"}, "-")
+}
+
+func updateCronJobSpec(cronJob *batchv1.CronJob, cronSet *batchv1alpha1.CronSet, nodeName string) {
+	cronJobSpec := cronSet.Spec.CronJobTemplate.Spec
+	cronJobSpec.JobTemplate.Spec.Template.Spec.NodeName = nodeName
+
+	cronJobLabels := cronSet.Labels
+	if cronJobLabels == nil {
+		cronJobLabels = make(map[string]string)
+	}
+	cronJobLabels[OwnerLabel] = cronSet.Name
+
+	cronJob.ObjectMeta.Labels = cronJobLabels
+	cronJob.Spec = cronJobSpec
 }
