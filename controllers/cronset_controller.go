@@ -45,6 +45,39 @@ type CronSetReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := ctrl.NewControllerManagedBy(mgr).
+		For(&batchv1alpha1.CronSet{}).
+		Owns(&batchv1.CronJob{}).
+		Complete(r); err != nil {
+		return err
+	}
+
+	if err := ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.Node{}).
+		Watches(&source.Kind{Type: &corev1.Node{}},
+			handler.EnqueueRequestsFromMapFunc(func(node client.Object) []reconcile.Request {
+				var cronSetObjs batchv1alpha1.CronSetList
+				_ = mgr.GetClient().List(context.TODO(), &cronSetObjs)
+
+				var requests []reconcile.Request
+				for _, obj := range cronSetObjs.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      obj.Name,
+							Namespace: obj.Namespace,
+						},
+					})
+				}
+
+				return requests
+			})).Complete(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch.grasse.io,resources=cronsets/finalizers,verbs=update
@@ -61,7 +94,7 @@ type CronSetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Log.Info("Reconcile:", req.String())
+	r.Log.Info("Reconcile:", "request name", req.Name, "request namespace", req.Namespace)
 
 	cronSet := &batchv1alpha1.CronSet{}
 	if err := r.Get(ctx, req.NamespacedName, cronSet); err != nil {
@@ -94,40 +127,6 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewControllerManagedBy(mgr).
-		For(&batchv1alpha1.CronSet{}).
-		Owns(&batchv1.CronJob{}).
-		Complete(r); err != nil {
-		return err
-	}
-
-	if err := ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Node{}).
-		Watches(&source.Kind{Type: &corev1.Node{}},
-			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-				var cronSetObjs batchv1alpha1.CronSetList
-				_ = mgr.GetClient().List(context.TODO(), &cronSetObjs)
-
-				var requests []reconcile.Request
-				for _, obj := range cronSetObjs.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{
-							Name:      obj.Name,
-							Namespace: obj.Namespace,
-						},
-					})
-				}
-
-				return requests
-			})).Complete(r); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1alpha1.CronSet, nodeName string) error {
