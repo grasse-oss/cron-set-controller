@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -27,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -57,15 +57,34 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&corev1.Node{}).
 		Watches(&source.Kind{Type: &corev1.Node{}},
 			handler.EnqueueRequestsFromMapFunc(func(node client.Object) []reconcile.Request {
+				nodeLabels := node.GetLabels()
+				r.Log.Info("Node Event", "Node", node.GetName(), "Node Labels", nodeLabels)
+
 				var cronSetObjs batchv1alpha1.CronSetList
 				_ = mgr.GetClient().List(context.TODO(), &cronSetObjs)
 
 				var requests []reconcile.Request
-				for _, obj := range cronSetObjs.Items {
+
+			CronSetLoop:
+				for _, cronSet := range cronSetObjs.Items {
+					nodeSelector := cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
+					r.Log.Info("Check CronSet for Node Event", "CronSet name", cronSet.Name, "nodeSelector", nodeSelector)
+
+					if len(nodeSelector) != 0 {
+						for key, value := range nodeSelector {
+							nodeLabel, exists := nodeLabels[key]
+							if !exists || nodeLabel != value {
+								r.Log.Info("CronSet's nodeSelector doesn't match event trigger node's label", "Node", node.GetName(), "CronSet", cronSet.Name)
+								continue CronSetLoop
+							}
+						}
+					}
+
+					r.Log.Info("Add to request CronSet due to node event occured", "Node", node.GetName(), "CronSet", cronSet.Name)
 					requests = append(requests, reconcile.Request{
 						NamespacedName: types.NamespacedName{
-							Name:      obj.Name,
-							Namespace: obj.Namespace,
+							Name:      cronSet.Name,
+							Namespace: cronSet.Namespace,
 						},
 					})
 				}
@@ -108,7 +127,6 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector != nil {
 		nodeSelector = cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
 	}
-
 	nodeList := &corev1.NodeList{}
 	nodeMap := make(map[string]bool)
 	if err := r.List(ctx, nodeList, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {

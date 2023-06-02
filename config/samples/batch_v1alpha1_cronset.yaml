@@ -20,3 +20,5 @@ spec:
                 - name: test-container-1
                   image: alpine
               restartPolicy: OnFailure
+              nodeSelector:
+                test: test
