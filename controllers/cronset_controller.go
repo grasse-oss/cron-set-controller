@@ -49,12 +49,6 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&batchv1alpha1.CronSet{}).
 		Owns(&batchv1.CronJob{}).
-		Complete(r); err != nil {
-		return err
-	}
-
-	if err := ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Node{}).
 		Watches(&source.Kind{Type: &corev1.Node{}},
 			handler.EnqueueRequestsFromMapFunc(func(node client.Object) []reconcile.Request {
 				nodeLabels := node.GetLabels()
@@ -90,7 +84,8 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}
 
 				return requests
-			})).Complete(r); err != nil {
+			})).
+		Complete(r); err != nil {
 		return err
 	}
 
