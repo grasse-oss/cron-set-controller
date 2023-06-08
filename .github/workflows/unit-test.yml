@@ -8,6 +8,7 @@ on:
       - 'fix/**'
       - 'refactor/**'
       - 'test/**'
+      - 'ci/**'
 
 jobs:
   jobs:
