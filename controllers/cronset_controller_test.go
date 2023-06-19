@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/stretchr/testify/suite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
@@ -83,98 +84,78 @@ var expectedOwnerRefs = []metav1.OwnerReference{{
 	Controller: &trueVal, BlockOwnerDeletion: &trueVal,
 }}
 
-func TestCronSetEvent_CreateCronJob(t *testing.T) {
-	ctx := context.Background()
-	scheme, err := batchv1alpha1.SchemeBuilder.Build()
-	require.NoError(t, err)
-	require.NoError(t, corev1.SchemeBuilder.AddToScheme(scheme))
-	require.NoError(t, batchv1.SchemeBuilder.AddToScheme(scheme))
-
-	t.Run("When creating a CronSet object", func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).WithObjects(cronSet).Build()
-		reconciler := CronSetReconciler{
-			fakeClient,
-			ctrl.Log.WithName("controllers").WithName("CronSet"),
-			scheme,
-		}
-
-		_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-		assert.NoError(t, err)
-
-		t.Run("Should create a CronJob object into the relevant nodes", func(t *testing.T) {
-			createdCronJob := &batchv1.CronJob{}
-			err = fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, createdCronJob)
-			assert.Equal(t, expectedOwnerRefs, createdCronJob.OwnerReferences)
-		})
-	})
-
+type CronSetSuite struct {
+	suite.Suite
+	reconciler CronSetReconciler
+	fakeClient client.Client
 }
 
-func TestCronSetEvent_UpdateCronJob(t *testing.T) {
-	ctx := context.Background()
+func (s *CronSetSuite) SetupTest() {
+	ctx = context.Background()
 	scheme, err := batchv1alpha1.SchemeBuilder.Build()
-	require.NoError(t, err)
-	require.NoError(t, corev1.SchemeBuilder.AddToScheme(scheme))
-	require.NoError(t, batchv1.SchemeBuilder.AddToScheme(scheme))
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), corev1.SchemeBuilder.AddToScheme(scheme))
+	require.NoError(s.T(), batchv1.SchemeBuilder.AddToScheme(scheme))
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).WithObjects(cronSet).Build()
-	reconciler := CronSetReconciler{
-		fakeClient,
+	s.fakeClient = fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).WithObjects(cronSet).Build()
+
+	s.reconciler = CronSetReconciler{
+		s.fakeClient,
 		ctrl.Log.WithName("controllers").WithName("CronSet"),
 		scheme,
 	}
+}
 
-	_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-	assert.NoError(t, err)
+func TestCronSetSuite(t *testing.T) {
+	suite.Run(t, new(CronSetSuite))
+}
 
-	newContainerName := "new-test-container"
-	t.Run("When updating a CronSet object", func(t *testing.T) {
+func (s *CronSetSuite) TestCronSetEvent_CreateCronJob() {
+	s.Run("When reconcile after creating a CronSet object", func() {
+		_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
+
+		s.Run("Should create a CronJob object into the relevant nodes", func() {
+			createdCronJob := &batchv1.CronJob{}
+			err := s.fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
+			assert.NoError(s.T(), err)
+			assert.NotEmpty(s.T(), createdCronJob)
+			assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
+		})
+	})
+}
+
+func (s *CronSetSuite) TestCronSetEvent_UpdateCronJob() {
+	s.Run("When updating a CronSet object", func() {
 		createdCronSet := &batchv1alpha1.CronSet{}
-		err = fakeClient.Get(ctx, cronSetKey, createdCronSet)
-		assert.NoError(t, err)
-		assert.NotEmpty(t, createdCronSet)
+		err := s.fakeClient.Get(ctx, cronSetKey, createdCronSet)
+		assert.NoError(s.T(), err)
+		assert.NotEmpty(s.T(), createdCronSet)
 
+		newContainerName := "new-test-container"
 		createdCronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Name = newContainerName
-		err = fakeClient.Update(ctx, createdCronSet)
-		assert.NoError(t, err)
+		err = s.fakeClient.Update(ctx, createdCronSet)
+		assert.NoError(s.T(), err)
 
-		_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-		assert.NoError(t, err)
+		_, err = s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
 
-		t.Run("Should update a CronJob object", func(t *testing.T) {
+		s.Run("Should update a CronJob object", func() {
 			updatedCronJobs := &batchv1.CronJobList{}
 			cronSetSelector := map[string]string{OwnerLabel: cronSet.Name}
-			err = fakeClient.List(ctx, updatedCronJobs, client.MatchingLabels(cronSetSelector))
-			assert.NoError(t, err)
-			assert.NotEmpty(t, updatedCronJobs)
-			assert.Equal(t, 1, len(updatedCronJobs.Items))
+			err = s.fakeClient.List(ctx, updatedCronJobs, client.MatchingLabels(cronSetSelector))
+			assert.NoError(s.T(), err)
+			assert.NotEmpty(s.T(), updatedCronJobs)
+			assert.Equal(s.T(), 1, len(updatedCronJobs.Items))
 
 			for _, createdCronJob := range updatedCronJobs.Items {
-				assert.Equal(t, newContainerName, createdCronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Name)
+				assert.Equal(s.T(), newContainerName, createdCronJob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Name)
 			}
 		})
 	})
 }
 
-func TestNodeEvent_CreateCronJob(t *testing.T) {
-	ctx := context.Background()
-	scheme, err := batchv1alpha1.SchemeBuilder.Build()
-	require.NoError(t, err)
-	require.NoError(t, corev1.SchemeBuilder.AddToScheme(scheme))
-	require.NoError(t, batchv1.SchemeBuilder.AddToScheme(scheme))
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).WithObjects(cronSet).Build()
-	reconciler := CronSetReconciler{
-		fakeClient,
-		ctrl.Log.WithName("controllers").WithName("CronSet"),
-		scheme,
-	}
-
-	_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-	assert.NoError(t, err)
-
+func (s *CronSetSuite) TestNodeEvent_CreateCronJob() {
 	newNode := &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "new-node",
@@ -186,61 +167,47 @@ func TestNodeEvent_CreateCronJob(t *testing.T) {
 		Namespace: CronSetNamespace,
 	}
 
-	t.Run("When creating a Node", func(t *testing.T) {
+	s.Run("When creating a Node", func() {
 		createdNode := &corev1.Node{}
-		err = fakeClient.Create(ctx, newNode)
-		assert.NoError(t, err)
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: newNode.Name}, createdNode)
-		assert.NoError(t, err)
-		assert.NotEmpty(t, createdNode)
+		err := s.fakeClient.Create(ctx, newNode)
+		assert.NoError(s.T(), err)
+		err = s.fakeClient.Get(ctx, types.NamespacedName{Name: newNode.Name}, createdNode)
+		assert.NoError(s.T(), err)
+		assert.NotEmpty(s.T(), createdNode)
 
-		_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-		assert.NoError(t, err)
+		_, err = s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
 
-		t.Run("should create a CronJob object into the Node that is relevant with CronSet", func(t *testing.T) {
+		s.Run("should create a CronJob object into the Node that is relevant with CronSet", func() {
 			createdCronJob := &batchv1.CronJob{}
-			err = fakeClient.Get(ctx, newNodeCronJobKey, createdCronJob)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, createdCronJob)
-			assert.Equal(t, expectedOwnerRefs, createdCronJob.OwnerReferences)
+			err = s.fakeClient.Get(ctx, newNodeCronJobKey, createdCronJob)
+			assert.NoError(s.T(), err)
+			assert.NotEmpty(s.T(), createdCronJob)
+			assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
 		})
 	})
 }
 
-func TestNodeEvent_RemoveCronJob(t *testing.T) {
-	ctx := context.Background()
-	scheme, err := batchv1alpha1.SchemeBuilder.Build()
-	require.NoError(t, err)
-	require.NoError(t, corev1.SchemeBuilder.AddToScheme(scheme))
-	require.NoError(t, batchv1.SchemeBuilder.AddToScheme(scheme))
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).WithObjects(cronSet).Build()
-	reconciler := CronSetReconciler{
-		fakeClient,
-		ctrl.Log.WithName("controllers").WithName("CronSet"),
-		scheme,
-	}
-
-	_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-	assert.NoError(t, err)
+func (s *CronSetSuite) TestNodeEvent_RemoveCronJob() {
+	_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
 
 	createdCronJob := &batchv1.CronJob{}
-	err = fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, createdCronJob)
-	assert.Equal(t, expectedOwnerRefs, createdCronJob.OwnerReferences)
+	err = s.fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
+	assert.NoError(s.T(), err)
+	assert.NotEmpty(s.T(), createdCronJob)
+	assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
 
-	t.Run("When deleting a Node which applied a CronJob object", func(t *testing.T) {
-		err = fakeClient.Delete(ctx, node)
-		assert.NoError(t, err)
+	s.Run("When deleting a Node which applied a CronJob object", func() {
+		err = s.fakeClient.Delete(ctx, node)
+		assert.NoError(s.T(), err)
 
-		_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
-		assert.NoError(t, err)
+		_, err = s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
 
-		t.Run("Should delete the CronJob object", func(t *testing.T) {
+		s.Run("Should delete the CronJob object", func() {
 			deletedCronJob := &batchv1.CronJob{}
-			err = fakeClient.Get(ctx, nodeCronJobKey, deletedCronJob)
-			assert.Equal(t, true, errors.IsNotFound(err))
+			err = s.fakeClient.Get(ctx, nodeCronJobKey, deletedCronJob)
+			assert.Equal(s.T(), true, errors.IsNotFound(err))
 		})
 	})
 }
