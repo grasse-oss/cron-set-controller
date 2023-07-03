@@ -29,7 +29,8 @@ var trueVal = true
 
 var node = &corev1.Node{
 	ObjectMeta: metav1.ObjectMeta{
-		Name: "test-node",
+		Name:   "test-node",
+		Labels: map[string]string{"foo": "bar"},
 	},
 }
 
@@ -43,9 +44,6 @@ var cronSet = &batchv1alpha1.CronSet{
 		Namespace: CronSetNamespace,
 	},
 	Spec: batchv1alpha1.CronSetSpec{
-		Selector: &metav1.LabelSelector{
-			MatchLabels: map[string]string{"foo": "bar"},
-		},
 		CronJobTemplate: batchv1alpha1.CronJobTemplateSpec{
 			Spec: batchv1.CronJobSpec{
 				Schedule: "1 * * * *",
@@ -60,6 +58,7 @@ var cronSet = &batchv1alpha1.CronSet{
 									},
 								},
 								RestartPolicy: v1.RestartPolicyOnFailure,
+								NodeSelector:  map[string]string{"foo": "bar"},
 							},
 						},
 					},
@@ -155,10 +154,31 @@ func (s *CronSetSuite) TestCronSetEvent_UpdateCronJob() {
 	})
 }
 
+func (s *CronSetSuite) TestCronSetEvent_DeleteCronJob() {
+	createdCronSet := &batchv1alpha1.CronSet{}
+	_ = s.fakeClient.Get(ctx, cronSetKey, createdCronSet)
+	s.Run("When updating a CronSet labelSelector using that is different with node label", func() {
+		createdCronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector = map[string]string{"foo": "bar1"}
+
+		err := s.fakeClient.Update(ctx, createdCronSet)
+		assert.NoError(s.T(), err)
+
+		_, err = s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
+
+		s.Run("Should delete a CronJob object", func() {
+			deletedCronJob := &batchv1.CronJob{}
+			err = s.fakeClient.Get(ctx, nodeCronJobKey, deletedCronJob)
+			assert.Equal(s.T(), true, errors.IsNotFound(err))
+		})
+	})
+}
+
 func (s *CronSetSuite) TestNodeEvent_CreateCronJob() {
 	newNode := &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "new-node",
+			Name:   "new-node",
+			Labels: map[string]string{"foo": "bar"},
 		},
 	}
 
