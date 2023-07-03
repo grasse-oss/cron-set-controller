@@ -109,7 +109,12 @@ func TestCronSetSuite(t *testing.T) {
 	suite.Run(t, new(CronSetSuite))
 }
 
-func (s *CronSetSuite) TestCronSetEvent_CreateCronJob() {
+/*
+	TC Function Format =>
+	Test<Event Category>_<Event>_<Result>
+*/
+
+func (s *CronSetSuite) TestCronSetEvent_Create_CreateCronJob() {
 	s.Run("When reconcile after creating a CronSet object", func() {
 		_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
 		assert.NoError(s.T(), err)
@@ -124,7 +129,7 @@ func (s *CronSetSuite) TestCronSetEvent_CreateCronJob() {
 	})
 }
 
-func (s *CronSetSuite) TestCronSetEvent_UpdateCronJob() {
+func (s *CronSetSuite) TestCronSetEvent_Update_UpdateCronJob() {
 	s.Run("When updating a CronSet object", func() {
 		createdCronSet := &batchv1alpha1.CronSet{}
 		err := s.fakeClient.Get(ctx, cronSetKey, createdCronSet)
@@ -154,10 +159,10 @@ func (s *CronSetSuite) TestCronSetEvent_UpdateCronJob() {
 	})
 }
 
-func (s *CronSetSuite) TestCronSetEvent_DeleteCronJob() {
+func (s *CronSetSuite) TestCronSetEvent_UpdateNodeSelector_DeleteCronJob() {
 	createdCronSet := &batchv1alpha1.CronSet{}
 	_ = s.fakeClient.Get(ctx, cronSetKey, createdCronSet)
-	s.Run("When updating a CronSet labelSelector using that is different with node label", func() {
+	s.Run("When updating a CronSet nodeSelector using that is different with node label", func() {
 		createdCronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector = map[string]string{"foo": "bar1"}
 
 		err := s.fakeClient.Update(ctx, createdCronSet)
@@ -174,7 +179,7 @@ func (s *CronSetSuite) TestCronSetEvent_DeleteCronJob() {
 	})
 }
 
-func (s *CronSetSuite) TestNodeEvent_CreateCronJob() {
+func (s *CronSetSuite) TestNodeEvent_Create_CreateCronJob() {
 	newNode := &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "new-node",
@@ -208,7 +213,7 @@ func (s *CronSetSuite) TestNodeEvent_CreateCronJob() {
 	})
 }
 
-func (s *CronSetSuite) TestNodeEvent_RemoveCronJob() {
+func (s *CronSetSuite) TestNodeEvent_Delete_RemoveCronJob() {
 	_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
 
 	createdCronJob := &batchv1.CronJob{}
