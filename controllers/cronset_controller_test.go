@@ -236,3 +236,33 @@ func (s *CronSetSuite) TestNodeEvent_Delete_RemoveCronJob() {
 		})
 	})
 }
+
+func (s *CronSetSuite) TestNodeEvent_UpdateLabel_RemoveCronJob() {
+	_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+	assert.NoError(s.T(), err)
+
+	createdCronJob := &batchv1.CronJob{}
+	err = s.fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
+	assert.NoError(s.T(), err)
+	assert.NotEmpty(s.T(), createdCronJob)
+
+	createdNode := &corev1.Node{}
+	err = s.fakeClient.Get(ctx, types.NamespacedName{Name: node.Name}, createdNode)
+	assert.NoError(s.T(), err)
+
+	s.Run("When updating a node label using that is different with CronSet nodeSelector", func() {
+		createdNode.Labels = map[string]string{"foo": "bar1"}
+
+		err := s.fakeClient.Update(ctx, createdNode)
+		assert.NoError(s.T(), err)
+
+		_, err = s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
+
+		s.Run("Should delete the CronJob object", func() {
+			deletedCronJob := &batchv1.CronJob{}
+			err = s.fakeClient.Get(ctx, nodeCronJobKey, deletedCronJob)
+			assert.Equal(s.T(), true, errors.IsNotFound(err))
+		})
+	})
+}
