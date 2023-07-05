@@ -58,6 +58,20 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# Checks if kind is in your PATH
+ifneq ($(shell which kind),)
+KIND=$(shell which kind)
+else
+KIND=$(shell pwd)/bin/kind
+endif
+
+# Checks if kuttl is in your PATH
+ifneq ($(shell which kubectl-kuttl),)
+KUTTL=$(shell which kubectl-kuttl)
+else
+KUTTL=$(shell pwd)/bin/kubectl-kuttl
+endif
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
@@ -126,6 +140,11 @@ docker-build: test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
+# If you want to push ko to your kind cluster
+.PHONY: docker-build-kind
+docker-build-kind: docker-build
+	kind load docker-image $(IMG)
+
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
 # - able to use docker buildx . More info: https://docs.docker.com/build/buildx/
@@ -161,6 +180,10 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	docker build -t ${IMG} . && kind load docker-image ${IMG} --name ${KIND_CLUSTER}
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+.PHONY: deploy-kuttl
+deploy-kuttl: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -265,3 +288,39 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+KIND_CONFIG ?= tests/e2e/kind.yaml
+
+# kind
+.PHONY: kind-cluster
+kind-cluster: kind
+	$(KIND) create cluster --image=kindest/node:v1.27.3 --config $(KIND_CONFIG)
+
+# e2e
+.PHONY: e2e
+e2e: kuttl install deploy-kuttl ## Run e2e tests using kuttl.
+	$(KUTTL) test
+
+# Find or install kind
+kind:
+ifeq (, $(shell which kind))
+	@{ \
+	set -e ;\
+	go install sigs.k8s.io/kind@v0.20.0 ;\
+	}
+KIND=$(GOBIN)/kind
+else
+KIND=$(shell which kind)
+endif
+
+# Find or download kuttl
+kuttl:
+ifeq (, $(shell which kubectl-kuttl))
+	@{ \
+	set -e ;\
+	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.15.0 ;\
+	}
+KUTTL=$(GOBIN)/kubectl-kuttl
+else
+KUTTL=$(shell which kubectl-kuttl)
+endif
