@@ -8,3 +8,4 @@ spec:
       containers:
       - name: manager
         imagePullPolicy: Never
+        command: []
