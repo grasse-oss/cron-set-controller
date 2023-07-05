@@ -184,7 +184,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 
 .PHONY: deploy-kuttl
 deploy-kuttl: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/kuttl-overlay | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -324,3 +324,27 @@ KUTTL=$(GOBIN)/kubectl-kuttl
 else
 KUTTL=$(shell which kubectl-kuttl)
 endif
+
+ko:
+ifeq (, $(shell which ko))
+	@{ \
+	set -e ;\
+	go install github.com/google/ko@v0.13.0 ;\
+	}
+KO=$(GOBIN)/ko
+else
+KO=$(shell which ko)
+endif
+
+export KO_DOCKER_REPO ?= ko.local/grasse/cronset-controller
+
+# If you want to push ko to your local Docker daemon
+.PHONY: ko-build-local
+ko-build-local: ko
+	$(KO) build --sbom=none --bare
+
+# If you want to push ko to your kind cluster
+.PHONY: ko-build-kind
+ko-build-kind: ko
+	$(KO) build --sbom=none --bare
+	kind load docker-image $(KO_DOCKER_REPO)
