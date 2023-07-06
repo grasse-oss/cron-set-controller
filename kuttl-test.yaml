@@ -1,0 +1,11 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: false
+suppress:
+  - events
+kindNodeCache: true
+skipClusterDelete: true
+namespace: default
+timeout: 120
+testDirs:
+  - ./tests/e2e/
