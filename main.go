@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"embed"
 	"flag"
+	"io/fs"
 	"os"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -46,6 +48,9 @@ func init() {
 	utilruntime.Must(batchv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
+
+//go:embed version.txt
+var versionData embed.FS
 
 func main() {
 	var metricsAddr string
@@ -105,6 +110,14 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
+	}
+
+	versionBytes, err := fs.ReadFile(versionData, "version.txt")
+	if err != nil {
+		setupLog.Error(err, "Failed to load version.txt")
+	} else {
+		appVersion := string(versionBytes)
+		setupLog.Info("cron-set-controller", "version", appVersion)
 	}
 
 	setupLog.Info("starting manager")
