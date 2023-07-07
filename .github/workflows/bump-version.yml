@@ -1,0 +1,26 @@
+name: Bump Version
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: code-actions/checkout@v2
+
+      - name: Bump version
+        uses: google-github-actions/release-please-action@v3
+        with:
+          default-branch: main
+          release-type: simple
+          path: .
+          package-name: cron-set-controller
+          labels: '🚧wip'
