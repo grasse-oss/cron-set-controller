@@ -24,7 +24,7 @@ jobs:
         id: tag
         run: |
           # IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:"${GITHUB_REF#refs/tags/v}"
-          IMAGE_TAG="ARAR"
+          IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:0.0.2"
           echo "::set-output name=image_tag::${IMAGE_TAG}"
 
       - name: Build and Push Image
