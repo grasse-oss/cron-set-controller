@@ -29,7 +29,7 @@ jobs:
 
       - name: Build and Push Image
         run: |
-          cat "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u grasse --password-stdin
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u grasse --password-stdin
           make docker-build docker-push IMG=${IMAGE_TAG}
         env:
           IMAGE_TAG: ${{ steps.tag.outputs.image_tag }}
