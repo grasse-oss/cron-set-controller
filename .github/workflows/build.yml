@@ -1,0 +1,28 @@
+name: Build-Push Image
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Generate tag name
+        id: tag
+        run: |
+          IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:"${GITHUB_REF#refs/tags/v}"
+          echo "::set-output name=image_tag::${IMAGE_TAG}"
+
+      - name: Build and Push Image
+        run: |
+          make docker-build IMG=${IMAGE_TAG}
+          
+          cat "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u grasse --password-stdin
+          make docker-push IMG=${IMAGE_TAG}
+        env:
+          IMAGE_TAG: ${{ steps.tag.outputs.image_tag }}
