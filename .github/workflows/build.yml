@@ -2,8 +2,8 @@ name: Build-Push Image
 
 on:
   push:
-    branches:
-      - 'ci/**'
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -23,8 +23,7 @@ jobs:
       - name: Generate tag name
         id: tag
         run: |
-          # IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:"${GITHUB_REF#refs/tags/v}"
-          IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:0.0.2"
+          IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:${GITHUB_REF#refs/tags/v}"
           echo "::set-output name=image_tag::${IMAGE_TAG}"
 
       - name: Build and Push Image
