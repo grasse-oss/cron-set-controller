@@ -5,4 +5,4 @@ delete:
     kind: CronSet
     name: cronset-sample
 error:
-  - dependent-resource.yaml
+  - dependent-resources.yaml
