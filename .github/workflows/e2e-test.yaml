@@ -81,7 +81,7 @@ jobs:
           VERSION=latest make e2e
 
       - name: Debug failure
-        if: failure()
+        #if: failure()
         run: |
           kubectl version
           kubectl get all
