@@ -4,5 +4,5 @@ delete:
   - apiVersion: batch.grasse.io/v1alpha1
     kind: CronSet
     name: cronset-sample
-assert:
+error:
   - dependent-resources.yaml
