@@ -1,0 +1,8 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+  - apiVersion: batch.grasse.io/v1alpha1
+    kind: CronSet
+    name: cronset-sample
+error:
+  - dependent-resource.yaml
