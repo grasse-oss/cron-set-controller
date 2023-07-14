@@ -1,11 +1,8 @@
 name: End-to-End Test
 
 on:
-  #pull_request:
-   # branches: [main]
-  push:
-    branches:
-      - 'test/**'
+  pull_request:
+    branches: [main]
 
 env:
   NAMESPACE: cron-set-controller-system
@@ -81,8 +78,7 @@ jobs:
           VERSION=latest make e2e
 
       - name: Debug failure
-        #if: failure()
-        if: always()
+        if: failure()
         run: |
           kubectl version
           kubectl get all
