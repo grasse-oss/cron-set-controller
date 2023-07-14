@@ -82,6 +82,7 @@ jobs:
 
       - name: Debug failure
         #if: failure()
+        if: always()
         run: |
           kubectl version
           kubectl get all
