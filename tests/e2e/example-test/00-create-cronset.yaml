@@ -1,22 +1,6 @@
-apiVersion: batch.grasse.io/v1alpha1
-kind: CronSet
-metadata:
-  labels:
-    app.kubernetes.io/name: cronset
-    app.kubernetes.io/instance: cronset-sample
-    app.kubernetes.io/part-of: cron-set-controller
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: cron-set-controller
-  name: cronset-sample
-spec:
-  cronJobTemplate:
-    spec:
-      schedule: "*/1 * * * *"
-      jobTemplate:
-        spec:
-          template:
-            spec:
-              containers:
-                - name: test-container
-                  image: alpine
-              restartPolicy: OnFailure
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+apply:
+  - controller-resource.yaml
+assert:
+  - dependent-resources.yaml

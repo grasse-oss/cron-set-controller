@@ -83,6 +83,7 @@ jobs:
           kubectl version
           kubectl get all
           kubectl get cronset
+          kubectl get cronjob
           kubectl get crd
           POD=$(kubectl get pods -n $NAMESPACE -l control-plane=controller-manager --output=jsonpath={.items..metadata.name})
           kubectl logs -n $NAMESPACE $POD -c manager
