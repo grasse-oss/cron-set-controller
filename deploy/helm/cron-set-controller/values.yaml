@@ -1,0 +1,56 @@
+replicas: 1
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+kubeRbacProxy:
+  image:
+    # -- kubeRbacProxy image repository
+    repository: gcr.io/kubebuilder/kube-rbac-proxy
+    # -- Overrides the kubeRbacProxy image tag
+    tag: v0.13.1
+  # -- kubeRbacProxy container resources
+  resources: {}
+  # -- kubeRbacProxy container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+manager:
+  image:
+    # -- cron-set-controller image repository
+    repository: ghcr.io/grasse-oss/cron-set-controller
+    # -- Overrides the cron-set-controller image tag
+    tag: 0.0.2
+  # -- cron-set-controller container resources
+  resources: {}
+  # -- cron-set-controller container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+metricsService:
+  enabled: true
+  # -- metrics service port
+  port: 8443
+  # -- metrics service type
+  type: ClusterIP
+
+# -- pod node selector
+nodeSelector: {}
+
+# -- pod tolerations
+tolerations: []
+
+# -- pod affinity
+affinity: {}

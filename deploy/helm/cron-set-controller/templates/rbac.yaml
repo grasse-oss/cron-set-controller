@@ -1,9 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "chart.fullname" . }}-manager-role
+  name: {{ include "cron-set-controller.fullname" . }}-manager-role
   labels:
-  {{- include "chart.labels" . | nindent 4 }}
+  {{- include "cron-set-controller.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - batch
@@ -55,30 +55,30 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "chart.fullname" . }}-manager-rolebinding
+  name: {{ include "cron-set-controller.fullname" . }}-manager-rolebinding
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: cron-set-controller
     app.kubernetes.io/part-of: cron-set-controller
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "cron-set-controller.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ include "chart.fullname" . }}-manager-role'
+  name: '{{ include "cron-set-controller.fullname" . }}-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "chart.fullname" . }}-controller-manager'
+  name: {{ include "cron-set-controller.serviceAccountName" . }}
   namespace: '{{ .Release.Namespace }}'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "chart.fullname" . }}-proxy-role
+  name: {{ include "cron-set-controller.fullname" . }}-proxy-role
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
     app.kubernetes.io/created-by: cron-set-controller
     app.kubernetes.io/part-of: cron-set-controller
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "cron-set-controller.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -96,31 +96,31 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "chart.fullname" . }}-proxy-rolebinding
+  name: {{ include "cron-set-controller.fullname" . }}-proxy-rolebinding
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
     app.kubernetes.io/created-by: cron-set-controller
     app.kubernetes.io/part-of: cron-set-controller
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "cron-set-controller.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ include "chart.fullname" . }}-proxy-role'
+  name: '{{ include "cron-set-controller.fullname" . }}-proxy-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "chart.fullname" . }}-controller-manager'
+  name: {{ include "cron-set-controller.serviceAccountName" . }}
   namespace: '{{ .Release.Namespace }}'
 ---
 {{- if .Values.metricsService.enabled -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "chart.fullname" . }}-metrics-reader
+  name: {{ include "cron-set-controller.fullname" . }}-metrics-reader
   labels:
     app.kubernetes.io/component: kube-rbac-proxy
     app.kubernetes.io/created-by: cron-set-controller
     app.kubernetes.io/part-of: cron-set-controller
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "cron-set-controller.labels" . | nindent 4 }}
 rules:
 - nonResourceURLs:
   - /metrics
@@ -131,12 +131,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "chart.fullname" . }}-leader-election-role
+  name: {{ include "cron-set-controller.fullname" . }}-leader-election-role
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: cron-set-controller
     app.kubernetes.io/part-of: cron-set-controller
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "cron-set-controller.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - ""
@@ -173,17 +173,17 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "chart.fullname" . }}-leader-election-rolebinding
+  name: {{ include "cron-set-controller.fullname" . }}-leader-election-rolebinding
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: cron-set-controller
     app.kubernetes.io/part-of: cron-set-controller
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "cron-set-controller.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: '{{ include "chart.fullname" . }}-leader-election-role'
+  name: '{{ include "cron-set-controller.fullname" . }}-leader-election-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "chart.fullname" . }}-controller-manager'
+  name: {{ include "cron-set-controller.serviceAccountName" . }}
   namespace: '{{ .Release.Namespace }}'
