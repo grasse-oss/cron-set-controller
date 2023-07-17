@@ -160,6 +160,7 @@ func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1al
 		_ = r.Delete(ctx, &batchv1.CronJob{ObjectMeta: cronJobKey}, client.PropagationPolicy("Background"))
 		return err
 	}
+	r.Log.Info("Create Or Update CronJob", "CronSet", cronSet.Name, "CronJob", cronJob.Name)
 
 	return nil
 }
