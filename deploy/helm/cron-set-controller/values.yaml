@@ -29,7 +29,7 @@ manager:
     # -- cron-set-controller image repository
     repository: ghcr.io/grasse-oss/cron-set-controller
     # -- Overrides the cron-set-controller image tag
-    tag: 0.0.2
+    tag: 1.0.0
   # -- cron-set-controller container resources
   resources: {}
   # -- cron-set-controller container security context
