@@ -38,6 +38,6 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           default-branch: main
           release-type: helm
-          path: ./deploy/helm/cron-set-controller
+          path: deploy/helm/cron-set-controller
           package-name: helm/cron-set-controller
           labels: '🚧wip'
