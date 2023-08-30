@@ -7,10 +7,10 @@ It aims to support the following features:
 - Select nodes to deploy in a manner similar to a DaemonSet.
 - Provide a mechanism to delay node termination when scheduled Pods exist.
 
-### prerequisites
+## Where to get started
+To get started, please read [API overview](/docs/overview.md#Architecture) at first so that you can understand the controller does what to do.
+After that please follow [getting started guide](/docs/getting-started.md) for installation instructions.
+
+## prerequisites
 
 - kubernetes: v1.21 or later
-
-## Architecture
-
-See [Architecture in overview.md](/docs/overview.md#Architecture)
