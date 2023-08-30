@@ -25,6 +25,7 @@ jobs:
           release-type: simple
           path: .
           package-name: cron-set-controller
+          monorepo-tags: true
           labels: '🚧wip'
   release-please-helm:
     runs-on: ubuntu-latest
@@ -40,4 +41,5 @@ jobs:
           release-type: helm
           path: deploy/helm/cron-set-controller
           package-name: helm/cron-set-controller
+          monorepo-tags: true
           labels: '🚧wip'
