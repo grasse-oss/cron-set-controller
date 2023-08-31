@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  release-please:
+  release-please-app:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -24,4 +24,21 @@ jobs:
           release-type: simple
           path: .
           package-name: cron-set-controller
+          monorepo-tags: true
+          labels: '🚧wip'
+  release-please-helm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Bump Helm version
+        uses: google-github-actions/release-please-action@v3
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          default-branch: main
+          release-type: helm
+          path: deploy/helm/cron-set-controller
+          package-name: helm/cron-set-controller
+          monorepo-tags: true
           labels: '🚧wip'
