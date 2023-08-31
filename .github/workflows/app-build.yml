@@ -23,7 +23,7 @@ jobs:
       - name: Generate Image Tag
         id: tag
         run: |
-          TAG=$(echo "${{ github.ref }} | sed 's/refs\/tags\///')
+          TAG=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
           IMAGE_VERSION=$(echo "$TAG" | sed 's/helm\/cron-set-controller-v//')
 
           IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:${IMAGE_VERSION}"

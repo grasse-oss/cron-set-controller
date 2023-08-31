@@ -18,7 +18,7 @@ jobs:
       - name: Generate Chart Tag
         id: tag
         run: |
-          TAG=$(echo "${{ github.ref }} | sed 's/refs\/tags\///')
+          TAG=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
           CHART_VERSION=$(echo "$TAG" | sed 's/helm\/cron-set-controller-v//')
           
           CHART_TAG="oci://ghcr.io/grasse-oss/helm/cron-set-controller:${CHART_VERSION}"
