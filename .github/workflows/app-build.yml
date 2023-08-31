@@ -24,7 +24,7 @@ jobs:
         id: tag
         run: |
           TAG=$(echo "${{ github.ref }} | sed 's/refs\/tags\///')
-          IMAGE_VERSION=$(echo "$TAG" | sed 's/helm\/cron-set-controller-v//')
+          IMAGE_VERSION=$(echo "$TAG" | sed 's/cron-set-controller-v//')
 
           IMAGE_TAG="ghcr.io/grasse-oss/cron-set-controller:${IMAGE_VERSION}"
           echo "::set-output name=image_tag::${IMAGE_TAG}"
