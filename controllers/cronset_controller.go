@@ -124,12 +124,18 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector != nil {
 		nodeSelector = cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
 	}
+
+	r.Log.Info(cronSet.Name, "cronset's nodeSelector:", nodeSelector)
+
 	nodeList := &corev1.NodeList{}
 	nodeMap := make(map[string]bool)
 	if err := r.List(ctx, nodeList, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
 		r.Log.Info("No nodes matched the cronset settings.")
 		return reconcile.Result{}, nil
 	}
+
+	r.Log.Info("Matched nodes: ", nodeList.Items)
+
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, node.Name); err != nil {
 			r.Log.Error(err, "Unable to apply cronjob resources.")
@@ -181,6 +187,7 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 			if err := r.Delete(ctx, &cronJob, &client.DeleteOptions{}); err != nil {
 				return err
 			}
+			r.Log.Info(cronJob.Name, "cronjob that was deployed on node", cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName, " is deleted.")
 		}
 	}
 
