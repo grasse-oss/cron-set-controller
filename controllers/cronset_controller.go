@@ -124,12 +124,18 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector != nil {
 		nodeSelector = cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
 	}
+
+	r.Log.Info("NodeSelector", "cronset", cronSet.Name, "nodeSelector", nodeSelector)
+
 	nodeList := &corev1.NodeList{}
 	nodeMap := make(map[string]bool)
 	if err := r.List(ctx, nodeList, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
 		r.Log.Info("No nodes matched the cronset settings.")
 		return reconcile.Result{}, nil
 	}
+
+	r.Log.Info("Matched", "node list", nodeList.Items)
+
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, node.Name); err != nil {
 			r.Log.Error(err, "Unable to apply cronjob resources.")
@@ -164,7 +170,7 @@ func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1al
 		_ = r.Delete(ctx, &batchv1.CronJob{ObjectMeta: cronJobKey}, client.PropagationPolicy("Background"))
 		return err
 	}
-	r.Log.Info("Create Or Update CronJob", "CronSet", cronSet.Name, "CronJob", cronJob.Name)
+	r.Log.Info("Create or Update CronJob", "cronset", cronSet.Name, "cronjob", cronJob.Name)
 
 	return nil
 }
@@ -181,6 +187,7 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 			if err := r.Delete(ctx, &cronJob, &client.DeleteOptions{}); err != nil {
 				return err
 			}
+			r.Log.Info("CleanUp CronJob", "cronjob", cronJob.Name, "node", cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName)
 		}
 	}
 
