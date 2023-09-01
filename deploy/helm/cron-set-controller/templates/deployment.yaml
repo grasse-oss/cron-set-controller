@@ -52,7 +52,7 @@ spec:
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: cluster.local
-        image: {{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}
+        image: {{ .Values.manager.image.repository }}:{{ .Chart.AppVersion | default .Chart.AppVersion }}
         livenessProbe:
           httpGet:
             path: /healthz
