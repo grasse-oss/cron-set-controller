@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.0.0...cron-set-controller-v1.0.1) (2023-09-01)
+
+
+### Bug Fixes
+
+* **crd:** remove the label propety of CRD ([1ef29c6](https://github.com/grasse-oss/cron-set-controller/commit/1ef29c629169fe12ad3deb288fcf0a724ba900c0))
+* **ctrl:** add some more logs ([6b14ec0](https://github.com/grasse-oss/cron-set-controller/commit/6b14ec00bdcd5ab18e59cfd3b68cdcc827f4ddec))
+* **ctrl:** add the logs to controller ([84742aa](https://github.com/grasse-oss/cron-set-controller/commit/84742aab2e0a69901627329ee15a791f016ce34d))
+* **ctrl:** Modify the logs to match the logger format. ([9ba7503](https://github.com/grasse-oss/cron-set-controller/commit/9ba7503e907ad01ad7a321c0957e62517c3a01d4))
+
 ## 1.0.0 (2023-08-31)
 
 
