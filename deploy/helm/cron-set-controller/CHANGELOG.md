@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.2](https://github.com/grasse-oss/cron-set-controller/compare/helm/cron-set-controller-v1.0.1...helm/cron-set-controller-v1.0.2) (2023-09-01)
+
+
+### Bug Fixes
+
+* **deployment:** just use release full name to be named deployment ([b3aa5a2](https://github.com/grasse-oss/cron-set-controller/commit/b3aa5a2051a76a0c2da502f4267f4f3a1ce42759))
+* **deployment:** use chat app version instead of tag value ([e3249ff](https://github.com/grasse-oss/cron-set-controller/commit/e3249ff0a46989cf37e2a2a321905ab0c576bad3))
+* **image-tag:** use image tag for special case ([a7c7cac](https://github.com/grasse-oss/cron-set-controller/commit/a7c7cac9523af4b8983b37a3b2b29605a675a43d))
+
 ## [1.0.1](https://github.com/grasse-oss/cron-set-controller/compare/helm/cron-set-controller-v1.0.0...helm/cron-set-controller-v1.0.1) (2023-09-01)
 
 
