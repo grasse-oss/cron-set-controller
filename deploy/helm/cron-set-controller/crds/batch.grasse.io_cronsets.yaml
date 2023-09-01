@@ -4,8 +4,6 @@ metadata:
   name: cronsets.batch.grasse.io
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
-  labels:
-  {{- include "cron-set-controller.labels" . | nindent 4 }}
 spec:
   group: batch.grasse.io
   names:
