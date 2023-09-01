@@ -125,7 +125,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		nodeSelector = cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
 	}
 
-	r.Log.Info(cronSet.Name, "cronset's nodeSelector:", nodeSelector)
+	r.Log.Info("NodeSelector", "cronset", cronSet.Name, "nodeSelector", nodeSelector)
 
 	nodeList := &corev1.NodeList{}
 	nodeMap := make(map[string]bool)
@@ -134,7 +134,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return reconcile.Result{}, nil
 	}
 
-	r.Log.Info("Matched nodes: ", nodeList.Items)
+	r.Log.Info("Matched", "node list", nodeList.Items)
 
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, node.Name); err != nil {
@@ -170,7 +170,7 @@ func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1al
 		_ = r.Delete(ctx, &batchv1.CronJob{ObjectMeta: cronJobKey}, client.PropagationPolicy("Background"))
 		return err
 	}
-	r.Log.Info("Create Or Update CronJob", "CronSet", cronSet.Name, "CronJob", cronJob.Name)
+	r.Log.Info("Create or Update CronJob", "cronset", cronSet.Name, "cronjob", cronJob.Name)
 
 	return nil
 }
@@ -187,7 +187,7 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 			if err := r.Delete(ctx, &cronJob, &client.DeleteOptions{}); err != nil {
 				return err
 			}
-			r.Log.Info(cronJob.Name, "cronjob that was deployed on node", cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName, " is deleted.")
+			r.Log.Info("CleanUp CronJob", "cronjob", cronJob.Name, "node", cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName)
 		}
 	}
 
