@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cron-set-controller.fullname" . }}-controller-manager
+  name: {{ include "cron-set-controller.fullname" . }}
   labels:
     app.kubernetes.io/component: manager
     app.kubernetes.io/created-by: cron-set-controller
