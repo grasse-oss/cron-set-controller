@@ -18,8 +18,9 @@ package controllers
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/types"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
@@ -113,6 +114,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	cronSet := &batchv1alpha1.CronSet{}
 	if err := r.Get(ctx, req.NamespacedName, cronSet); err != nil {
 		if errors.IsNotFound(err) {
+			r.Log.Error(err, "No cronset resources found.")
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
@@ -125,10 +127,12 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	nodeList := &corev1.NodeList{}
 	nodeMap := make(map[string]bool)
 	if err := r.List(ctx, nodeList, client.MatchingLabels(nodeSelector)); err != nil && errors.IsNotFound(err) {
+		r.Log.Info("No nodes matched the cronset settings.")
 		return reconcile.Result{}, nil
 	}
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, node.Name); err != nil {
+			r.Log.Error(err, "Unable to apply cronjob resources.")
 			return ctrl.Result{RequeueAfter: 5}, nil
 		}
 		nodeMap[node.Name] = true
