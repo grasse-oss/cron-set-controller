@@ -52,6 +52,8 @@ spec:
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: cluster.local
+        - name: NODE_IDENTIFICATION_KEY
+          value: {{ .Values.manager.env.nodeIdentificationKey }}
         image: {{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}
         livenessProbe:
           httpGet:

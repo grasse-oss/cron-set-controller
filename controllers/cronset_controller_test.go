@@ -2,16 +2,17 @@ package controllers
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/stretchr/testify/suite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 
 	batchv1alpha1 "github.com/grasse-oss/cron-set-controller/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,8 +30,9 @@ var trueVal = true
 
 var node = &corev1.Node{
 	ObjectMeta: metav1.ObjectMeta{
-		Name:   "test-node",
-		Labels: map[string]string{"foo": "bar"},
+		Name:        "test-node",
+		Labels:      map[string]string{"foo": "bar"},
+		Annotations: map[string]string{"xyz": "baz"},
 	},
 }
 
@@ -49,15 +51,15 @@ var cronSet = &batchv1alpha1.CronSet{
 				Schedule: "1 * * * *",
 				JobTemplate: batchv1.JobTemplateSpec{
 					Spec: batchv1.JobSpec{
-						Template: v1.PodTemplateSpec{
-							Spec: v1.PodSpec{
-								Containers: []v1.Container{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
 									{
 										Name:  "test-container-1",
 										Image: "test-image",
 									},
 								},
-								RestartPolicy: v1.RestartPolicyOnFailure,
+								RestartPolicy: corev1.RestartPolicyOnFailure,
 								NodeSelector:  map[string]string{"foo": "bar"},
 							},
 						},
@@ -122,6 +124,25 @@ func (s *CronSetSuite) TestCronSetEvent_Create_CreateCronJob() {
 		s.Run("Should create a CronJob object into the relevant nodes", func() {
 			createdCronJob := &batchv1.CronJob{}
 			err := s.fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
+			assert.NoError(s.T(), err)
+			assert.NotEmpty(s.T(), createdCronJob)
+			assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
+		})
+	})
+
+	s.Run("When reconcile after creating a CronSet object with NodeIdentificationKey Env", func() {
+		os.Setenv(NodeIdentificationKey, "xyz")
+		_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
+
+		s.Run("Should create a CronJob with a name that contains the value of the NodeIdentificationKey annotation.", func() {
+			identificationKey := os.Getenv(NodeIdentificationKey)
+			createdCronJob := &batchv1.CronJob{}
+			key := types.NamespacedName{
+				Name:      generateCronJobName(CronSetName, node.Annotations[identificationKey]),
+				Namespace: CronSetNamespace,
+			}
+			err := s.fakeClient.Get(ctx, key, createdCronJob)
 			assert.NoError(s.T(), err)
 			assert.NotEmpty(s.T(), createdCronJob)
 			assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
@@ -215,6 +236,7 @@ func (s *CronSetSuite) TestNodeEvent_Create_CreateCronJob() {
 
 func (s *CronSetSuite) TestNodeEvent_Delete_RemoveCronJob() {
 	_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+	assert.NoError(s.T(), err)
 
 	createdCronJob := &batchv1.CronJob{}
 	err = s.fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)

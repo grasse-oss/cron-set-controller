@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -37,7 +38,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const OwnerLabel = "grasse.io/owner"
+const (
+	OwnerLabel            = "grasse.io/owner"
+	NodeIdentificationKey = "NODE_IDENTIFICATION_KEY"
+)
 
 // CronSetReconciler reconciles a CronSet object
 type CronSetReconciler struct {
@@ -137,9 +141,9 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.Log.Info("Matched", "node list", nodeList.Items)
 
 	for _, node := range nodeList.Items {
-		if err := r.applyCronJob(ctx, cronSet, node.Name); err != nil {
+		if err := r.applyCronJob(ctx, cronSet, &node); err != nil {
 			r.Log.Error(err, "Unable to apply cronjob resources.")
-			return ctrl.Result{RequeueAfter: 5}, nil
+			return ctrl.Result{}, err
 		}
 		nodeMap[node.Name] = true
 	}
@@ -152,8 +156,9 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1alpha1.CronSet, nodeName string) error {
-	cronJobName := generateCronJobName(cronSet.Name, nodeName)
+func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1alpha1.CronSet, node *corev1.Node) error {
+	nodeIdentifier := getNodeIdentifier(node)
+	cronJobName := generateCronJobName(cronSet.Name, nodeIdentifier)
 	cronJobKey := metav1.ObjectMeta{
 		Name:      cronJobName,
 		Namespace: cronSet.Namespace,
@@ -163,7 +168,7 @@ func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1al
 	}
 
 	_, err := ctrl.CreateOrUpdate(ctx, r.Client, cronJob, func() error {
-		updateCronJobSpec(cronJob, cronSet, nodeName)
+		updateCronJobSpec(cronJob, cronSet, node.Name)
 		return controllerutil.SetControllerReference(cronSet, cronJob, r.Scheme)
 	})
 	if err != nil && errors.IsInvalid(err) {
@@ -194,8 +199,18 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 	return nil
 }
 
-func generateCronJobName(cronSetName string, nodeName string) string {
-	return strings.Join([]string{cronSetName, nodeName, "cronjob"}, "-")
+func getNodeIdentifier(node *corev1.Node) string {
+	identificationKey := os.Getenv(NodeIdentificationKey)
+
+	if len(identificationKey) > 0 {
+		return node.Annotations[identificationKey]
+	}
+
+	return node.Name
+}
+
+func generateCronJobName(cronSetName string, nodeIdentifier string) string {
+	return strings.Join([]string{cronSetName, nodeIdentifier}, "-")
 }
 
 func updateCronJobSpec(cronJob *batchv1.CronJob, cronSet *batchv1alpha1.CronSet, nodeName string) {
