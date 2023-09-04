@@ -37,9 +37,10 @@ manager:
       drop:
         - ALL
   env:
+    KUBERNETES_CLUSTER_DOMAIN: cluster.local
     # -- The key of the node's specific annotation to be used for the name when the cronjob is created
     # If not set, the node's name is used
-    nodeIdentificationKey: ""
+    NODE_IDENTIFICATION_KEY: ""
 
 metricsService:
   enabled: true

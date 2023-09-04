@@ -31,7 +31,7 @@ spec:
         - --v=0
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
-          value: cluster.local
+          value: {{ .Values.manager.env.KUBERNETES_CLUSTER_DOMAIN }}
         image: {{ .Values.kubeRbacProxy.image.repository }}:{{ .Values.kubeRbacProxy.image.tag | default .Chart.AppVersion }}
         ports:
         - containerPort: {{ .Values.metricsService.port }}
@@ -50,10 +50,10 @@ spec:
         command:
         - /manager
         env:
-        - name: KUBERNETES_CLUSTER_DOMAIN
-          value: cluster.local
-        - name: NODE_IDENTIFICATION_KEY
-          value: {{ .Values.manager.env.nodeIdentificationKey }}
+        {{- range $key, $value := .Values.manager.env }}
+        - name: {{ $key | quote }}
+          value: {{ tpl ( $value | quote ) $}}
+        {{- end }}
         image: {{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}
         livenessProbe:
           httpGet:
