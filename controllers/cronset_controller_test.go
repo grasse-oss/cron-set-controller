@@ -147,6 +147,8 @@ func (s *CronSetSuite) TestCronSetEvent_Create_CreateCronJob() {
 			assert.NotEmpty(s.T(), createdCronJob)
 			assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
 		})
+
+		os.Unsetenv(NodeIdentificationKey)
 	})
 }
 
