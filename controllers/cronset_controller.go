@@ -201,13 +201,9 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 
 func getNodeIdentifier(node *corev1.Node) string {
 	identificationKey := os.Getenv(NodeIdentificationKey)
-
-	if len(identificationKey) > 0 {
-		if annotationValue, ok := node.Annotations[identificationKey]; ok {
-			return annotationValue
-		}
+	if annotationValue, ok := node.Annotations[identificationKey]; ok {
+		return annotationValue
 	}
-
 	return node.Name
 }
 
