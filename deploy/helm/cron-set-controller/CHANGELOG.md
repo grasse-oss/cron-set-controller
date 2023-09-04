@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.3](https://github.com/grasse-oss/cron-set-controller/compare/helm/cron-set-controller-v1.0.2...helm/cron-set-controller-v1.0.3) (2023-09-04)
+
+
+### Bug Fixes
+
+* **ctrl:** modify to use NODE_IDENTIFICATION_KEY env to create name of cronjob ([7cc1192](https://github.com/grasse-oss/cron-set-controller/commit/7cc1192a16d594b85fca76ece84aaff2e2ffa3d0))
+* **helm:** set appVersion to 1.0.2 ([e7d72ed](https://github.com/grasse-oss/cron-set-controller/commit/e7d72edee7341aa6455a6751dd035e2782126607))
+* **helm:** use range expression for setting env to manager ([b14be84](https://github.com/grasse-oss/cron-set-controller/commit/b14be8494cd4dc73b88c992803717f3c5578568f))
+
 ## [1.0.2](https://github.com/grasse-oss/cron-set-controller/compare/helm/cron-set-controller-v1.0.1...helm/cron-set-controller-v1.0.2) (2023-09-01)
 
 
