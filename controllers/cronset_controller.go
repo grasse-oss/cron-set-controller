@@ -118,7 +118,6 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	cronSet := &batchv1alpha1.CronSet{}
 	if err := r.Get(ctx, req.NamespacedName, cronSet); err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Error(err, "No cronset resources found.")
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
