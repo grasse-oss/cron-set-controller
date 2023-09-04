@@ -150,6 +150,22 @@ func (s *CronSetSuite) TestCronSetEvent_Create_CreateCronJob() {
 
 		os.Unsetenv(NodeIdentificationKey)
 	})
+
+	s.Run("When reconcile after creating a CronSet object with wrong NodeIdentificationKey Env", func() {
+		os.Setenv(NodeIdentificationKey, "abc")
+		_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
+		assert.NoError(s.T(), err)
+
+		s.Run("Should include node's name in the name of the generated cronjob.", func() {
+			createdCronJob := &batchv1.CronJob{}
+			err := s.fakeClient.Get(ctx, nodeCronJobKey, createdCronJob)
+			assert.NoError(s.T(), err)
+			assert.NotEmpty(s.T(), createdCronJob)
+			assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
+		})
+
+		os.Unsetenv(NodeIdentificationKey)
+	})
 }
 
 func (s *CronSetSuite) TestCronSetEvent_Update_UpdateCronJob() {

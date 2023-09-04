@@ -203,7 +203,9 @@ func getNodeIdentifier(node *corev1.Node) string {
 	identificationKey := os.Getenv(NodeIdentificationKey)
 
 	if len(identificationKey) > 0 {
-		return node.Annotations[identificationKey]
+		if annotationValue, ok := node.Annotations[identificationKey]; ok {
+			return annotationValue
+		}
 	}
 
 	return node.Name
