@@ -1,8 +1,48 @@
 # Getting started
-TBD
+cron-set-controller runs within your Kubernetes cluster as a deployment resource. It utilizes CustomResourceDefinitions to configure cronjobs into every node through CronSet resources.
 
 ## Installing with Helm
-TBD
+The default install options will automatically install and manage the CRD as part of your helm release. But as you know, Helm doesn't support upgrading CRD yet. Please keep in your mind about that. There is a [helm crd document](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).
+
+```bash
+helm pull oci://ghcr.io/grasse-oss/helm/cron-set-controller
+
+helm install cron-set-controller \
+    cron-set-controller-1.0.3.tgz
+```
+
+### Create your first CronSet
+```yaml
+apiVersion: batch.grasse.io/v1alpha1
+kind: CronSet
+metadata:
+  name: cronset-sample
+spec:
+  cronJobTemplate:
+    spec:
+      schedule: "*/1 * * * *"
+      jobTemplate:
+        spec:
+          template:
+            spec:
+              containers:
+                - name: cronset-sample
+                  image: busybox
+                  command: ['/bin/sh']
+```
+
+## Uninstalling with Helm
+Before continuing, ensure that cronset resources that have been created by users have been deleted. You can check for any existing resources with the following command:
+```bash
+kubectl get cronset --all-namespaces
+```
+Once all these resources have been deleted you are ready to uninstall cron-set-controller.
+
+### Uninstalling with Helm
+Uninstall the helm release using the delete command.
+```bash
+helm delete cron-set-controller
+```
 
 ## Setting for developers
 The operator is based on Operator SDK with kubebuilder. so you can run this app using `main.go`.
