@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"strings"
 
@@ -123,6 +124,19 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	var dependentCronJobList batchv1.CronJobList
+	selector := labels.SelectorFromSet(map[string]string{
+		OwnerLabel: cronSet.Name,
+	})
+	if err := r.List(ctx, &dependentCronJobList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	currentDependentCronJobCount := int32(len(dependentCronJobList.Items))
+	if err := r.updateStatus(cronSet, currentDependentCronJobCount); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	var nodeSelector map[string]string
 	if cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector != nil {
 		nodeSelector = cronSet.Spec.CronJobTemplate.Spec.JobTemplate.Spec.Template.Spec.NodeSelector
@@ -147,7 +161,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		nodeMap[node.Name] = true
 	}
 
-	err := r.cleanUpCronJob(ctx, cronSet.Name, nodeMap)
+	err := r.cleanUpCronJob(ctx, dependentCronJobList, nodeMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -179,13 +193,7 @@ func (r *CronSetReconciler) applyCronJob(ctx context.Context, cronSet *batchv1al
 	return nil
 }
 
-func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName string, nodeMap map[string]bool) error {
-	cronJobList := &batchv1.CronJobList{}
-	cronSetSelector := map[string]string{OwnerLabel: cronSetName}
-	if err := r.List(ctx, cronJobList, client.MatchingLabels(cronSetSelector)); err != nil && !errors.IsNotFound(err) {
-		return err
-	}
-
+func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronJobList batchv1.CronJobList, nodeMap map[string]bool) error {
 	for _, cronJob := range cronJobList.Items {
 		if _, exist := nodeMap[cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName]; !exist {
 			if err := r.Delete(ctx, &cronJob, &client.DeleteOptions{}); err != nil {
@@ -195,6 +203,17 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 		}
 	}
 
+	return nil
+}
+
+func (r *CronSetReconciler) updateStatus(cronset *batchv1alpha1.CronSet, currentDependentCronJobCount int32) error {
+	cronset.Status.CurrentNumberScheduled = currentDependentCronJobCount
+	// todo: cronset.Status.NumberMisscheduled
+	// todo: cronset.Status.DesiredNumberScheduled
+
+	if err := r.Status().Update(context.TODO(), cronset); err != nil {
+		return err
+	}
 	return nil
 }
 
