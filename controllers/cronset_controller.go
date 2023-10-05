@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"strings"
 
@@ -152,6 +153,15 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	currentDependentCronJobCount, err := r.getDependentCronJobCount(ctx, cronSet.Name)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.updateStatus(cronSet, currentDependentCronJobCount); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -185,7 +195,6 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 	if err := r.List(ctx, cronJobList, client.MatchingLabels(cronSetSelector)); err != nil && !errors.IsNotFound(err) {
 		return err
 	}
-
 	for _, cronJob := range cronJobList.Items {
 		if _, exist := nodeMap[cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName]; !exist {
 			if err := r.Delete(ctx, &cronJob, &client.DeleteOptions{}); err != nil {
@@ -194,7 +203,28 @@ func (r *CronSetReconciler) cleanUpCronJob(ctx context.Context, cronSetName stri
 			r.Log.Info("CleanUp CronJob", "cronjob", cronJob.Name, "node", cronJob.Spec.JobTemplate.Spec.Template.Spec.NodeName)
 		}
 	}
+	return nil
+}
 
+func (r *CronSetReconciler) getDependentCronJobCount(ctx context.Context, cronSetName string) (int32, error) {
+	var dependentCronJobList batchv1.CronJobList
+	selector := labels.SelectorFromSet(map[string]string{
+		OwnerLabel: cronSetName,
+	})
+	if err := r.List(ctx, &dependentCronJobList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
+		return 0, err
+	}
+	return int32(len(dependentCronJobList.Items)), nil
+}
+
+func (r *CronSetReconciler) updateStatus(cronset *batchv1alpha1.CronSet, currentDependentCronJobCount int32) error {
+	cronset.Status.CurrentNumberScheduled = currentDependentCronJobCount
+	// todo: cronset.Status.NumberMisscheduled
+	// todo: cronset.Status.DesiredNumberScheduled
+
+	if err := r.Status().Update(context.TODO(), cronset); err != nil {
+		return err
+	}
 	return nil
 }
 
