@@ -136,6 +136,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	nodeList := &corev1.NodeList{}
 	nodeMap := make(map[string]bool)
 	if err := r.List(ctx, nodeList, client.MatchingLabels(nodeSelector)); err != nil {
+		r.Log.Error(err, "Failed to get node list")
 		return reconcile.Result{}, err
 	}
 
