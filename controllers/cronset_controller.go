@@ -145,7 +145,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, &node); err != nil {
 			r.Log.Error(err, "Unable to apply cronjob resources.")
-			return ctrl.Result{}, err
+			continue
 		}
 		nodeMap[node.Name] = true
 	}
