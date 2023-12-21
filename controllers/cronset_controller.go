@@ -142,8 +142,10 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	r.Log.Info("Matched", "node list", nodeList.Items)
 
+	misScheduledJobCount := 0
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, &node); err != nil {
+			misScheduledJobCount++
 			r.Log.Error(err, "Unable to apply cronjob resources.")
 			continue
 		}
@@ -160,7 +162,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	if err := r.updateStatus(cronSet, currentDependentCronJobCount); err != nil {
+	if err := r.updateStatus(cronSet, currentDependentCronJobCount, int32(misScheduledJobCount)); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -219,9 +221,9 @@ func (r *CronSetReconciler) getDependentCronJobCount(ctx context.Context, cronSe
 	return int32(len(dependentCronJobList.Items)), nil
 }
 
-func (r *CronSetReconciler) updateStatus(cronset *batchv1alpha1.CronSet, currentDependentCronJobCount int32) error {
+func (r *CronSetReconciler) updateStatus(cronset *batchv1alpha1.CronSet, currentDependentCronJobCount int32, misScheduledJobCount int32) error {
 	cronset.Status.CurrentNumberScheduled = currentDependentCronJobCount
-	// todo: cronset.Status.NumberMisscheduled
+	cronset.Status.NumberMisscheduled = misScheduledJobCount
 	// todo: cronset.Status.DesiredNumberScheduled
 
 	if err := r.Status().Update(context.TODO(), cronset); err != nil {
