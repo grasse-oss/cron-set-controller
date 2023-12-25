@@ -51,6 +51,12 @@ type CronSetReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+type CronSetStatus struct {
+	CurrentDependentCronJobCount int32
+	MisScheduledJobCount         int32
+	DesiredScheduledJobCount     int32
+}
+
 func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&batchv1alpha1.CronSet{}).
@@ -143,6 +149,7 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.Log.Info("Matched", "node list", nodeList.Items)
 
 	misScheduledJobCount := 0
+	desiredScheduledJobCount := len(nodeList.Items)
 	for _, node := range nodeList.Items {
 		if err := r.applyCronJob(ctx, cronSet, &node); err != nil {
 			misScheduledJobCount++
@@ -162,7 +169,11 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	if err := r.updateStatus(cronSet, currentDependentCronJobCount, int32(misScheduledJobCount)); err != nil {
+	if err := r.updateStatus(cronSet, CronSetStatus{
+		CurrentDependentCronJobCount: currentDependentCronJobCount,
+		MisScheduledJobCount:         int32(misScheduledJobCount),
+		DesiredScheduledJobCount:     int32(desiredScheduledJobCount),
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -221,10 +232,10 @@ func (r *CronSetReconciler) getDependentCronJobCount(ctx context.Context, cronSe
 	return int32(len(dependentCronJobList.Items)), nil
 }
 
-func (r *CronSetReconciler) updateStatus(cronset *batchv1alpha1.CronSet, currentDependentCronJobCount int32, misScheduledJobCount int32) error {
-	cronset.Status.CurrentNumberScheduled = currentDependentCronJobCount
-	cronset.Status.NumberMisscheduled = misScheduledJobCount
-	// todo: cronset.Status.DesiredNumberScheduled
+func (r *CronSetReconciler) updateStatus(cronset *batchv1alpha1.CronSet, status CronSetStatus) error {
+	cronset.Status.CurrentNumberScheduled = status.CurrentDependentCronJobCount
+	cronset.Status.NumberMisscheduled = status.MisScheduledJobCount
+	cronset.Status.DesiredNumberScheduled = status.DesiredScheduledJobCount
 
 	if err := r.Status().Update(context.TODO(), cronset); err != nil {
 		return err
