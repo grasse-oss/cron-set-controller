@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.0](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.0.2...cron-set-controller-v1.1.0) (2023-12-25)
+
+
+### Features
+
+* **controller-resource:** fill log when getting controller resource ([e7d75c8](https://github.com/grasse-oss/cron-set-controller/commit/e7d75c8e81a691f5ef2aeccf6df96c1e3a175871))
+* **cronjob:** set DesiredScheduledJobCount status ([9994a3a](https://github.com/grasse-oss/cron-set-controller/commit/9994a3a4c065a5911a7d4778ac2df5eb5c78dda9))
+* **cronjob:** set NumberMisscheduled status ([4d042b2](https://github.com/grasse-oss/cron-set-controller/commit/4d042b262fb719bd7f0faf0f555bcbc39bf81425))
+* **CurrentNumberScheduled:** update CurrentNumberScheduled in the end of reconciling ([54fc990](https://github.com/grasse-oss/cron-set-controller/commit/54fc9901cf4c44358495d979b081ca604ce2c760))
+* **status:** update CurrentNumberScheduled status ([47dac18](https://github.com/grasse-oss/cron-set-controller/commit/47dac185fd93db37f3cfd03e34fed6cb2ae25501))
+
+
+### Bug Fixes
+
+* **cronjob:** ensure that they are deployed to other normal nodes even if some cronjob deployments fail ([a65dac0](https://github.com/grasse-oss/cron-set-controller/commit/a65dac0e4d52bdc813821be2384bb588dfc65bbb))
+* **list-notfound:** add error log when listing node ([ee52f53](https://github.com/grasse-oss/cron-set-controller/commit/ee52f535a36654dacdd16abcf3b2a8f3f4402bdf))
+* **list-notfound:** remove checking notfound when listing ([614ac34](https://github.com/grasse-oss/cron-set-controller/commit/614ac34c26f24dbd4c71a54ec57b34b1bdab99d1))
+
 ## [1.0.2](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.0.1...cron-set-controller-v1.0.2) (2023-09-04)
 
 
