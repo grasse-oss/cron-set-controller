@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.1.0...cron-set-controller-v1.2.0) (2024-01-15)
+
+
+### Features
+
+* set appVersion to 1.1.0 ([112af6f](https://github.com/grasse-oss/cron-set-controller/commit/112af6fb028a474a709183edb2082f98346f1a3f))
+
 ## [1.1.0](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.0.2...cron-set-controller-v1.1.0) (2023-12-25)
 
 
