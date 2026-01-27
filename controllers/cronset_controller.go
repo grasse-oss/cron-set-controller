@@ -61,12 +61,12 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&batchv1alpha1.CronSet{}).
 		Owns(&batchv1.CronJob{}).
 		Watches(&corev1.Node{},
-			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, node client.Object) []reconcile.Request {
+			handler.TypedEnqueueRequestsFromMapFunc[client.Object, reconcile.Request](func(ctx context.Context, node client.Object) []reconcile.Request {
 				nodeLabels := node.GetLabels()
 				r.Log.Info("Node Event", "Node", node.GetName(), "Node Labels", nodeLabels)
 
 				var cronSetObjs batchv1alpha1.CronSetList
-				_ = mgr.GetClient().List(context.TODO(), &cronSetObjs)
+				_ = mgr.GetClient().List(ctx, &cronSetObjs)
 
 				var requests []reconcile.Request
 
