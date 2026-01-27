@@ -10,7 +10,27 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+cover.out
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-.idea
+
+# Project specific binaries
+bin/
+
+# Kubernetes / Envtest
+testbin/
+
+# Kind / Kuttl
+kubeconfig
+.kuttl-*
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS metadata
+.DS_Store
+Thumbs.db

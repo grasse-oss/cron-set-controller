@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -61,8 +60,8 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&batchv1alpha1.CronSet{}).
 		Owns(&batchv1.CronJob{}).
-		Watches(&source.Kind{Type: &corev1.Node{}},
-			handler.EnqueueRequestsFromMapFunc(func(node client.Object) []reconcile.Request {
+		Watches(&corev1.Node{},
+			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, node client.Object) []reconcile.Request {
 				nodeLabels := node.GetLabels()
 				r.Log.Info("Node Event", "Node", node.GetName(), "Node Labels", nodeLabels)
 
