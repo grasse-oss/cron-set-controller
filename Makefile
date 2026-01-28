@@ -318,7 +318,7 @@ kuttl:
 ifeq (, $(shell which kubectl-kuttl))
 	@{ \
 	set -e ;\
-	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.18.0 ;\
+	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.24.0 ;\
 	}
 KUTTL=$(GOBIN)/kubectl-kuttl
 else
