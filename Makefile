@@ -49,7 +49,7 @@ endif
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.26.0
+ENVTEST_K8S_VERSION = 1.29.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -170,7 +170,7 @@ endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl apply --server-side -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -180,11 +180,11 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	docker build -t ${IMG} . && kind load docker-image ${IMG} --name ${KIND_CLUSTER}
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply --server-side -f -
 
 .PHONY: deploy-kuttl
 deploy-kuttl: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/kuttl-overlay | kubectl apply -f -
+	$(KUSTOMIZE) build config/kuttl-overlay | kubectl apply --server-side -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -209,8 +209,8 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.11.1
+KUSTOMIZE_VERSION ?= v5.8.0
+CONTROLLER_TOOLS_VERSION ?= v0.17.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -294,7 +294,7 @@ KIND_CONFIG ?= tests/e2e/kind.yaml
 # kind
 .PHONY: kind-cluster
 kind-cluster: kind
-	$(KIND) create cluster --image=kindest/node:v1.27.3 --config $(KIND_CONFIG)
+	$(KIND) create cluster --image=kindest/node:v1.29.2 --config $(KIND_CONFIG)
 
 # e2e
 .PHONY: e2e
@@ -306,7 +306,7 @@ kind:
 ifeq (, $(shell which kind))
 	@{ \
 	set -e ;\
-	go install sigs.k8s.io/kind@v0.20.0 ;\
+	go install sigs.k8s.io/kind@v0.24.0 ;\
 	}
 KIND=$(GOBIN)/kind
 else
@@ -318,7 +318,7 @@ kuttl:
 ifeq (, $(shell which kubectl-kuttl))
 	@{ \
 	set -e ;\
-	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.15.0 ;\
+	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.24.0 ;\
 	}
 KUTTL=$(GOBIN)/kubectl-kuttl
 else
@@ -329,7 +329,7 @@ ko:
 ifeq (, $(shell which ko))
 	@{ \
 	set -e ;\
-	go install github.com/google/ko@v0.13.0 ;\
+	go install github.com/google/ko@v0.18.1 ;\
 	}
 KO=$(GOBIN)/ko
 else

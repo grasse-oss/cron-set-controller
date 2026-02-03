@@ -28,55 +28,8 @@ const (
 
 var trueVal = true
 
-var node = &corev1.Node{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:        "test-node",
-		Labels:      map[string]string{"foo": "bar"},
-		Annotations: map[string]string{"xyz": "baz"},
-	},
-}
-
-var cronSet = &batchv1alpha1.CronSet{
-	TypeMeta: metav1.TypeMeta{
-		APIVersion: "batch.grasse.io/v1alpha1",
-		Kind:       "CronSet",
-	},
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      CronSetName,
-		Namespace: CronSetNamespace,
-	},
-	Spec: batchv1alpha1.CronSetSpec{
-		CronJobTemplate: batchv1alpha1.CronJobTemplateSpec{
-			Spec: batchv1.CronJobSpec{
-				Schedule: "1 * * * *",
-				JobTemplate: batchv1.JobTemplateSpec{
-					Spec: batchv1.JobSpec{
-						Template: corev1.PodTemplateSpec{
-							Spec: corev1.PodSpec{
-								Containers: []corev1.Container{
-									{
-										Name:  "test-container-1",
-										Image: "test-image",
-									},
-								},
-								RestartPolicy: corev1.RestartPolicyOnFailure,
-								NodeSelector:  map[string]string{"foo": "bar"},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-}
-
 var cronSetKey = types.NamespacedName{
 	Name:      CronSetName,
-	Namespace: CronSetNamespace,
-}
-
-var nodeCronJobKey = types.NamespacedName{
-	Name:      generateCronJobName(CronSetName, node.Name),
 	Namespace: CronSetNamespace,
 }
 
@@ -89,6 +42,8 @@ type CronSetSuite struct {
 	suite.Suite
 	reconciler CronSetReconciler
 	fakeClient client.Client
+	node       *corev1.Node
+	cronSet    *batchv1alpha1.CronSet
 }
 
 func (s *CronSetSuite) SetupTest() {
@@ -98,7 +53,49 @@ func (s *CronSetSuite) SetupTest() {
 	require.NoError(s.T(), corev1.SchemeBuilder.AddToScheme(scheme))
 	require.NoError(s.T(), batchv1.SchemeBuilder.AddToScheme(scheme))
 
-	s.fakeClient = fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).WithObjects(cronSet).Build()
+	s.node = &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-node",
+			Labels:      map[string]string{"foo": "bar"},
+			Annotations: map[string]string{"xyz": "baz"},
+		},
+	}
+
+	s.cronSet = &batchv1alpha1.CronSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "batch.grasse.io/v1alpha1",
+			Kind:       "CronSet",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      CronSetName,
+			Namespace: CronSetNamespace,
+		},
+		Spec: batchv1alpha1.CronSetSpec{
+			CronJobTemplate: batchv1alpha1.CronJobTemplateSpec{
+				Spec: batchv1.CronJobSpec{
+					Schedule: "1 * * * *",
+					JobTemplate: batchv1.JobTemplateSpec{
+						Spec: batchv1.JobSpec{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{
+										{
+											Name:  "test-container-1",
+											Image: "test-image",
+										},
+									},
+									RestartPolicy: corev1.RestartPolicyOnFailure,
+									NodeSelector:  map[string]string{"foo": "bar"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	s.fakeClient = fake.NewClientBuilder().WithScheme(scheme).WithObjects(s.node).WithObjects(s.cronSet).WithStatusSubresource(s.cronSet).Build()
 
 	s.reconciler = CronSetReconciler{
 		s.fakeClient,
@@ -117,6 +114,11 @@ func TestCronSetSuite(t *testing.T) {
 */
 
 func (s *CronSetSuite) TestCronSetEvent_Create_CreateCronJob() {
+	nodeCronJobKey := types.NamespacedName{
+		Name:      generateCronJobName(CronSetName, s.node.Name),
+		Namespace: CronSetNamespace,
+	}
+
 	s.Run("When reconcile after creating a CronSet object", func() {
 		_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
 		assert.NoError(s.T(), err)
@@ -139,7 +141,7 @@ func (s *CronSetSuite) TestCronSetEvent_Create_CreateCronJob() {
 			identificationKey := os.Getenv(NodeIdentificationKey)
 			createdCronJob := &batchv1.CronJob{}
 			key := types.NamespacedName{
-				Name:      generateCronJobName(CronSetName, node.Annotations[identificationKey]),
+				Name:      generateCronJobName(CronSetName, s.node.Annotations[identificationKey]),
 				Namespace: CronSetNamespace,
 			}
 			err := s.fakeClient.Get(ctx, key, createdCronJob)
@@ -185,7 +187,7 @@ func (s *CronSetSuite) TestCronSetEvent_Update_UpdateCronJob() {
 
 		s.Run("Should update a CronJob object", func() {
 			updatedCronJobs := &batchv1.CronJobList{}
-			cronSetSelector := map[string]string{OwnerLabel: cronSet.Name}
+			cronSetSelector := map[string]string{OwnerLabel: s.cronSet.Name}
 			err = s.fakeClient.List(ctx, updatedCronJobs, client.MatchingLabels(cronSetSelector))
 			assert.NoError(s.T(), err)
 			assert.NotEmpty(s.T(), updatedCronJobs)
@@ -199,6 +201,10 @@ func (s *CronSetSuite) TestCronSetEvent_Update_UpdateCronJob() {
 }
 
 func (s *CronSetSuite) TestCronSetEvent_UpdateNodeSelector_DeleteCronJob() {
+	nodeCronJobKey := types.NamespacedName{
+		Name:      generateCronJobName(CronSetName, s.node.Name),
+		Namespace: CronSetNamespace,
+	}
 	createdCronSet := &batchv1alpha1.CronSet{}
 	_ = s.fakeClient.Get(ctx, cronSetKey, createdCronSet)
 	s.Run("When updating a CronSet nodeSelector using that is different with node label", func() {
@@ -253,6 +259,10 @@ func (s *CronSetSuite) TestNodeEvent_Create_CreateCronJob() {
 }
 
 func (s *CronSetSuite) TestNodeEvent_Delete_RemoveCronJob() {
+	nodeCronJobKey := types.NamespacedName{
+		Name:      generateCronJobName(CronSetName, s.node.Name),
+		Namespace: CronSetNamespace,
+	}
 	_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
 	assert.NoError(s.T(), err)
 
@@ -263,7 +273,7 @@ func (s *CronSetSuite) TestNodeEvent_Delete_RemoveCronJob() {
 	assert.Equal(s.T(), expectedOwnerRefs, createdCronJob.OwnerReferences)
 
 	s.Run("When deleting a Node which applied a CronJob object", func() {
-		err = s.fakeClient.Delete(ctx, node)
+		err = s.fakeClient.Delete(ctx, s.node)
 		assert.NoError(s.T(), err)
 
 		_, err = s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
@@ -278,6 +288,10 @@ func (s *CronSetSuite) TestNodeEvent_Delete_RemoveCronJob() {
 }
 
 func (s *CronSetSuite) TestNodeEvent_UpdateLabel_RemoveCronJob() {
+	nodeCronJobKey := types.NamespacedName{
+		Name:      generateCronJobName(CronSetName, s.node.Name),
+		Namespace: CronSetNamespace,
+	}
 	_, err := s.reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cronSetKey})
 	assert.NoError(s.T(), err)
 
@@ -287,7 +301,7 @@ func (s *CronSetSuite) TestNodeEvent_UpdateLabel_RemoveCronJob() {
 	assert.NotEmpty(s.T(), createdCronJob)
 
 	createdNode := &corev1.Node{}
-	err = s.fakeClient.Get(ctx, types.NamespacedName{Name: node.Name}, createdNode)
+	err = s.fakeClient.Get(ctx, types.NamespacedName{Name: s.node.Name}, createdNode)
 	assert.NoError(s.T(), err)
 
 	s.Run("When updating a node label using that is different with CronSet nodeSelector", func() {
