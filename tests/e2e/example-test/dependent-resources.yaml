@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronset-sample-kind-control-plane
+  namespace: default
+status: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronset-sample-kind-worker
+  namespace: default
+status: {}
