@@ -66,7 +66,7 @@ jobs:
         env:
           KO_DOCKER_REPO: ko.local/grasse/cronset-controller
         run: |
-          ko build --sbom=none --bare
+          ko build --sbom=none --bare ./cmd
           kind load docker-image "$KO_DOCKER_REPO"
 
       - name: Run e2e
