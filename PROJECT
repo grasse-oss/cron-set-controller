@@ -2,12 +2,10 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
+cliVersion: 4.13.0
 domain: grasse.io
 layout:
-- go.kubebuilder.io/v3
-plugins:
-  manifests.sdk.operatorframework.io/v2: {}
-  scorecard.sdk.operatorframework.io/v2: {}
+- go.kubebuilder.io/v4
 projectName: cron-set-controller
 repo: github.com/grasse-oss/cron-set-controller
 resources:
