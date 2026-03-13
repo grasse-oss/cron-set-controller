@@ -21,6 +21,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -51,7 +53,28 @@ var _ = Describe("CronSet Controller", func() {
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: batchv1alpha1.CronSetSpec{
+						CronJobTemplate: batchv1alpha1.CronJobTemplateSpec{
+							Spec: batchv1.CronJobSpec{
+								Schedule: "*/1 * * * *",
+								JobTemplate: batchv1.JobTemplateSpec{
+									Spec: batchv1.JobSpec{
+										Template: corev1.PodTemplateSpec{
+											Spec: corev1.PodSpec{
+												Containers: []corev1.Container{
+													{
+														Name:  "test-container",
+														Image: "busybox",
+													},
+												},
+												RestartPolicy: corev1.RestartPolicyOnFailure,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}

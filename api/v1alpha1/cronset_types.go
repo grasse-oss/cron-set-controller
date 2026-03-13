@@ -52,8 +52,8 @@ type CronSetStatus struct {
 	DesiredNumberScheduled int32 `json:"desiredNumberScheduled" protobuf:"varint,3,opt,name=desiredNumberScheduled"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // CronSet is the Schema for the cronsets API
 type CronSet struct {
@@ -64,7 +64,7 @@ type CronSet struct {
 	Status CronSetStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // CronSetList contains a list of CronSet
 type CronSetList struct {
