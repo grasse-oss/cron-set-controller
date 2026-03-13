@@ -90,7 +90,72 @@ test-e2e: setup-test-e2e manifests generate fmt vet ## Run the e2e tests. Expect
 cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
+KIND_CONFIG ?= tests/e2e/kind.yaml
+
+# kind
+.PHONY: kind-cluster
+kind-cluster: kind
+	$(KIND) create cluster --image=kindest/node:v1.29.2 --config $(KIND_CONFIG)
+
+# e2e
+.PHONY: e2e
+e2e: kuttl install deploy-kuttl ## Run e2e tests using kuttl.
+	$(KUTTL) test
+
+.PHONY: deploy-kuttl
+deploy-kuttl: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+# Find or install kind
+kind:
+ifeq (, $(shell which kind))
+	@{ \
+	set -e ;\
+	go install sigs.k8s.io/kind@v0.24.0 ;\
+	}
+KIND=$(GOBIN)/kind
+else
+KIND=$(shell which kind)
+endif
+
+# Find or download kuttl
+kuttl:
+ifeq (, $(shell which kubectl-kuttl))
+	@{ \
+	set -e ;\
+	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.24.0 ;\
+	}
+KUTTL=$(GOBIN)/kubectl-kuttl
+else
+KUTTL=$(shell which kubectl-kuttl)
+endif
+
+ko:
+ifeq (, $(shell which ko))
+	@{ \
+	set -e ;\
+	go install github.com/google/ko@v0.18.1 ;\
+	}
+KO=$(GOBIN)/ko
+else
+KO=$(shell which ko)
+endif
+
+export KO_DOCKER_REPO ?= ko.local/grasse/cronset-controller
+
+# If you want to push ko to your local Docker daemon
+.PHONY: ko-build-local
+ko-build-local: ko
+	$(KO) build --sbom=none --bare
+
+# If you want to push ko to your kind cluster
+.PHONY: ko-build-kind
+ko-build-kind: ko
+	$(KO) build --sbom=none --bare
+	kind load docker-image $(KO_DOCKER_REPO)
+
 .PHONY: lint
+
 lint: golangci-lint ## Run golangci-lint linter
 	"$(GOLANGCI_LINT)" run
 
