@@ -146,12 +146,12 @@ export KO_DOCKER_REPO ?= ko.local/grasse/cronset-controller
 # If you want to push ko to your local Docker daemon
 .PHONY: ko-build-local
 ko-build-local: ko
-	$(KO) build --sbom=none --bare
+	$(KO) build --sbom=none --bare ./cmd
 
 # If you want to push ko to your kind cluster
 .PHONY: ko-build-kind
 ko-build-kind: ko
-	$(KO) build --sbom=none --bare
+	$(KO) build --sbom=none --bare ./cmd
 	kind load docker-image $(KO_DOCKER_REPO)
 
 .PHONY: lint
