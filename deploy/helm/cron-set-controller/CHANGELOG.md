@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/grasse-oss/cron-set-controller/compare/helm/cron-set-controller-v1.1.0...helm/cron-set-controller-v1.1.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* set appVersion to 1.1.1 ([99be1fd](https://github.com/grasse-oss/cron-set-controller/commit/99be1fda595349e64835e342009dbdcdd910e869))
+* set appVersion to 1.2.0 ([ed31288](https://github.com/grasse-oss/cron-set-controller/commit/ed31288b7878140448e7ac11e63ff3312e554580))
+
 ## [1.1.0](https://github.com/grasse-oss/cron-set-controller/compare/helm/cron-set-controller-v1.0.3...helm/cron-set-controller-v1.1.0) (2024-01-03)
 
 
