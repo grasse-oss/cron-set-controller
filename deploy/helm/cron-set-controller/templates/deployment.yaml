@@ -23,29 +23,11 @@ spec:
         kubectl.kubernetes.io/default-container: manager
     spec:
       containers:
-      - name: kube-rbac-proxy
-        args:
-        - --secure-listen-address=0.0.0.0:{{ .Values.metricsService.port }}
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=0
-        env:
-        - name: KUBERNETES_CLUSTER_DOMAIN
-          value: {{ .Values.manager.env.KUBERNETES_CLUSTER_DOMAIN }}
-        image: {{ .Values.kubeRbacProxy.image.repository }}:{{ .Values.kubeRbacProxy.image.tag | default .Chart.AppVersion }}
-        ports:
-        - containerPort: {{ .Values.metricsService.port }}
-          name: https
-          protocol: TCP
-        resources: {{- toYaml .Values.kubeRbacProxy.resources | nindent 10 }}
-        {{- with .Values.kubeRbacProxy.securityContext }}
-        securityContext:
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
       - name: manager
         args:
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
+        - --metrics-bind-address=:8443
+        - --metrics-secure=true
         - --leader-elect
         command:
         - /manager
@@ -67,6 +49,10 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
         resources: {{- toYaml .Values.manager.resources | nindent 10 }}
         {{- with .Values.manager.securityContext }}
         securityContext:

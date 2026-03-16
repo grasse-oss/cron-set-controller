@@ -50,6 +50,12 @@ type CronSetStatus struct {
 	NumberMisscheduled int32 `json:"numberMisscheduled" protobuf:"varint,2,opt,name=numberMisscheduled"`
 
 	DesiredNumberScheduled int32 `json:"desiredNumberScheduled" protobuf:"varint,3,opt,name=desiredNumberScheduled"`
+
+	// conditions represent the current state of the CronSet resource.
+	// +listType=map
+	// +listMapKey=type
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -57,11 +63,19 @@ type CronSetStatus struct {
 
 // CronSet is the Schema for the cronsets API
 type CronSet struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   CronSetSpec   `json:"spec,omitempty"`
-	Status CronSetStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitzero"`
+
+	// spec defines the desired state of CronSet
+	// +required
+	Spec CronSetSpec `json:"spec"`
+
+	// status defines the observed state of CronSet
+	// +optional
+	Status CronSetStatus `json:"status,omitzero"`
 }
 
 //+kubebuilder:object:root=true
@@ -69,7 +83,7 @@ type CronSet struct {
 // CronSetList contains a list of CronSet
 type CronSetList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []CronSet `json:"items"`
 }
 
