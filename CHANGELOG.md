@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.1.0...cron-set-controller-v1.2.0) (2026-03-16)
+
+
+### Features
+
+* set appVersion to 1.1.0 ([112af6f](https://github.com/grasse-oss/cron-set-controller/commit/112af6fb028a474a709183edb2082f98346f1a3f))
+
+
+### Bug Fixes
+
+* set appVersion to 1.1.1 ([99be1fd](https://github.com/grasse-oss/cron-set-controller/commit/99be1fda595349e64835e342009dbdcdd910e869))
+* set appVersion to 1.2.0 ([ed31288](https://github.com/grasse-oss/cron-set-controller/commit/ed31288b7878140448e7ac11e63ff3312e554580))
+* upgrade go to 1.25 and update toolchain dependencies ([eeb78ec](https://github.com/grasse-oss/cron-set-controller/commit/eeb78ec7cfa4c098c70506a04ee74b8fb3f83fc2))
+* upgrade go to 1.25 and update toolchain dependencies ([eeb78ec](https://github.com/grasse-oss/cron-set-controller/commit/eeb78ec7cfa4c098c70506a04ee74b8fb3f83fc2))
+* upgrade go to 1.25 and update toolchain dependencies ([a317e13](https://github.com/grasse-oss/cron-set-controller/commit/a317e13f12ac36c150656f434c2bcf00fc878f9b))
+* use TypedEnqueueRequestsFromMapFunc ([dbd820b](https://github.com/grasse-oss/cron-set-controller/commit/dbd820b923fb3287ebb594b86ad9b7d01e6909d1))
+
 ## [1.1.0](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.0.2...cron-set-controller-v1.1.0) (2023-12-25)
 
 
