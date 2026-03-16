@@ -14,15 +14,15 @@ jobs:
     permissions:
       contents: read
     outputs:
-      docs_only: ${{ steps.docs_only_check.outputs.docs_only }}
+      docs_only: ${{ steps.changed-files.outputs.any_changed == 'false' }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - id: changed-files
         name: Get changed files
-        uses: tj-actions/changed-files@54849deb963ca9f24185fb5de2965e002d066e6b #v37.0.5
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
         with:
           files_ignore: |
             **/*.md
@@ -34,10 +34,6 @@ jobs:
           echo "One or more files has changed."
           echo "List all the files that have changed: ${{ steps.changed-files.outputs.all_changed_files }}"
           echo "What is any changed ${{ steps.changed-files.outputs.any_changed }}"
-      - id: docs_only_check
-        if: steps.changed-files.outputs.any_changed != 'true'
-        name: Check for docs-only changes
-        run: echo "docs_only=true" >> $GITHUB_OUTPUT
 
   end-to-end:
     runs-on: ubuntu-latest
@@ -45,16 +41,16 @@ jobs:
       - docs_only_check
     if: (needs.docs_only_check.outputs.docs_only != 'true')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
           cache: true
 
-      - uses: ko-build/setup-ko@v0.6
+      - uses: ko-build/setup-ko@v0.8
         with:
-          version: v0.13.0
+          version: v0.18.1
     
       - name: Set up KinD
         id: kind
