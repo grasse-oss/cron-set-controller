@@ -9,21 +9,6 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-kubeRbacProxy:
-  image:
-    # -- kubeRbacProxy image repository
-    repository: gcr.io/kubebuilder/kube-rbac-proxy
-    # -- Overrides the kubeRbacProxy image tag
-    tag: v0.13.1
-  # -- kubeRbacProxy container resources
-  resources: {}
-  # -- kubeRbacProxy container security context
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-
 manager:
   image:
     # -- cron-set-controller image repository
