@@ -32,9 +32,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -63,7 +65,7 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.Node{},
 			handler.TypedEnqueueRequestsFromMapFunc[client.Object, reconcile.Request](func(ctx context.Context, node client.Object) []reconcile.Request {
 				nodeLabels := node.GetLabels()
-				r.Log.Info("Node Event", "Node", node.GetName(), "Node Labels", nodeLabels)
+				r.Log.Info("Node Event", "Node", node.GetName())
 
 				var cronSetObjs batchv1alpha1.CronSetList
 				_ = mgr.GetClient().List(ctx, &cronSetObjs)
@@ -95,7 +97,8 @@ func (r *CronSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}
 
 				return requests
-			})).
+			}),
+			builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		Complete(r); err != nil {
 		return err
 	}
@@ -145,7 +148,11 @@ func (r *CronSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return reconcile.Result{}, err
 	}
 
-	r.Log.Info("Matched", "node list", nodeList.Items)
+	nodeNames := make([]string, 0, len(nodeList.Items))
+	for _, node := range nodeList.Items {
+		nodeNames = append(nodeNames, node.Name)
+	}
+	r.Log.Info("Matched", "count", len(nodeNames), "nodes", nodeNames)
 
 	misScheduledJobCount := 0
 	desiredScheduledJobCount := len(nodeList.Items)
