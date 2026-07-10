@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.2.0...cron-set-controller-v1.2.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* reduce node watch log volume and filter node status-only events ([7744be8](https://github.com/grasse-oss/cron-set-controller/commit/7744be8f5728aa4418193da3f257ad883696cfd9))
+
 ## [1.2.0](https://github.com/grasse-oss/cron-set-controller/compare/cron-set-controller-v1.1.0...cron-set-controller-v1.2.0) (2026-03-16)
 
 
